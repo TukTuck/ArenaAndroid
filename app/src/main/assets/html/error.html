@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fehler</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; font-family: system-ui, -apple-system, Roboto, sans-serif;
+    background: #f5f7fa; color: #202124; padding: 24px; box-sizing: border-box;
+  }
+  .card { max-width: 420px; width: 100%; }
+  .icon {
+    width: 88px; height: 88px; line-height: 88px; margin: 0 auto 20px;
+    border-radius: 50%; background: #fce8e6; color: #c5221f;
+    font-size: 48px; font-weight: 700;
+  }
+  h1 { font-size: 26px; margin: 0 0 12px; }
+  p { font-size: 17px; line-height: 1.55; color: #3c4043; margin: 0 0 32px; }
+  .details {
+    font-size: 12px; color: #80868b; line-height: 1.5;
+    margin: -16px 0 24px; word-break: break-all;
+  }
+  button {
+    width: 100%; min-height: 60px; font-size: 20px; font-weight: 600;
+    color: #fff; background: #1a73e8; border: 0; border-radius: 14px; margin-bottom: 14px;
+  }
+  button:active { background: #1557b0; }
+  button.secondary { background: #e8f0fe; color: #1a73e8; }
+  button.secondary:active { background: #d2e3fc; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">!</div>
+    <h1>Seite konnte nicht geladen werden</h1>
+    <p id="msg">Die Verbindung zu arena.ai wurde unterbrochen oder die Seite ist derzeit nicht erreichbar.</p>
+    <p class="details" id="details"></p>
+    <button onclick="ArenaApp.retry()">Erneut versuchen</button>
+    <button class="secondary" onclick="ArenaApp.openBrowser()">Im Browser öffnen</button>
+  </div>
+<script>
+  try {
+    var q = location.search;
+    if (q.indexOf('cert=1') >= 0) {
+      document.getElementById('msg').textContent =
+        'Das Sicherheitszertifikat der Seite ist ungältig. Zum Schutz wurde die Verbindung abgebrochen.';
+    }
+    var parts = [];
+    var mUrl = /[?&]url=([^&]*)/.exec(q);
+    var mCode = /[?&]code=([^&]*)/.exec(q);
+    if (mUrl) parts.push('Adresse: ' + decodeURIComponent(mUrl[1]));
+    if (mCode) parts.push('Code: ' + decodeURIComponent(mCode[1]));
+    if (parts.length) {
+      document.getElementById('details').textContent = parts.join('  ·  ');
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>

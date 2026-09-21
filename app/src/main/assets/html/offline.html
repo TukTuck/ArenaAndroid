@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offline</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; font-family: system-ui, -apple-system, Roboto, sans-serif;
+    background: #f5f7fa; color: #202124; padding: 24px; box-sizing: border-box;
+  }
+  .card { max-width: 420px; width: 100%; }
+  .icon {
+    width: 88px; height: 88px; line-height: 88px; margin: 0 auto 20px;
+    border-radius: 50%; background: #e8eaed; color: #5f6368;
+    font-size: 48px; font-weight: 700;
+  }
+  h1 { font-size: 26px; margin: 0 0 12px; }
+  p { font-size: 17px; line-height: 1.55; color: #3c4043; margin: 0 0 32px; }
+  button {
+    width: 100%; min-height: 60px; font-size: 20px; font-weight: 600;
+    color: #fff; background: #1a73e8; border: 0; border-radius: 14px; margin-bottom: 14px;
+  }
+  button:active { background: #1557b0; }
+  button.secondary { background: #e8f0fe; color: #1a73e8; }
+  button.secondary:active { background: #d2e3fc; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">!</div>
+    <h1>Keine Internetverbindung</h1>
+    <p>Verbinde dich mit WLAN oder Mobilfunk und versuche es erneut.</p>
+    <button onclick="ArenaApp.retry()">Erneut versuchen</button>
+    <button class="secondary" onclick="ArenaApp.openBrowser()">Im Browser öffnen</button>
+  </div>
+</body>
+</html>

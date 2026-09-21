@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arena</string>
+
+    <!-- Barrierefreiheit: Beschreibungen für TalkBack -->
+    <string name="cd_back">Zurück</string>
+    <string name="cd_forward">Vorwärts</string>
+    <string name="cd_reload">Neu laden</string>
+    <string name="cd_zoom_out">Schrift kleiner</string>
+    <string name="cd_zoom_in">Schrift größer</string>
+    <string name="cd_menu">Menü</string>
+
+    <string name="menu_reload">Neu laden</string>
+    <string name="menu_browser">Im Browser öffnen</string>
+    <string name="menu_share">Link teilen</string>
+    <string name="menu_desktop">Desktop-Website</string>
+    <string name="menu_dark">Dunkler Modus</string>
+    <string name="menu_lite">Sparmodus (Bilder aus)</string>
+    <string name="menu_zoom_reset">Schriftgröße zurücksetzen</string>
+    <string name="menu_clear">Zurücksetzen (Cache &amp; Login)</string>
+    <string name="menu_about">Über</string>
+
+    <string name="clear_confirm_title">Alles zurücksetzen?</string>
+    <string name="clear_confirm_text">Cache und Anmeldung werden gelöscht. Danach musst du dich bei arena.ai neu anmelden.</string>
+    <string name="clear_confirm_yes">Zurücksetzen</string>
+    <string name="cancel">Abbrechen</string>
+
+    <string name="retry">Erneut versuchen</string>
+    <string name="open_browser">Im Browser öffnen</string>
+    <string name="pick_file">Datei auswählen</string>
+
+    <string name="toast_zoom">Schriftgröße: %1$d %%</string>
+    <string name="toast_no_app">Keine passende App gefunden</string>
+    <string name="toast_download">Download gestartet</string>
+    <string name="toast_download_error">Download nicht möglich</string>
+    <string name="toast_restored">Die Seite wurde wiederhergestellt</string>
+    <string name="toast_desktop_on">Desktop-Website: An</string>
+    <string name="toast_desktop_off">Desktop-Website: Aus</string>
+    <string name="toast_dark_on">Dunkler Modus: An</string>
+    <string name="toast_dark_off">Dunkler Modus: Aus</string>
+    <string name="toast_lite_on">Sparmodus: An – Bilder aus</string>
+    <string name="toast_lite_off">Sparmodus: Aus</string>
+
+    <string name="about_text">Arena für Android\nVersion %1$s\n\nSchlanke App, die arena.ai schnell und stabil bereitstellt.\nOptimiert für Geräte bis Android 7, läuft ab Android 4.4.\n\nFalls die Seite einmal abstürzt, lädt die App sie automatisch neu.</string>
+</resources>

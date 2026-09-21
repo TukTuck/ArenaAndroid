@@ -1,0 +1,5 @@
+// Root build file – die App selbst hat keine externen Abhängigkeiten
+// (nur Android-Plattform-API), damit sie auch auf alten Geräten klein und stabil bleibt.
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

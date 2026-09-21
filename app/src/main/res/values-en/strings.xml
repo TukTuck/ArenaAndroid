@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arena</string>
+
+    <string name="cd_back">Back</string>
+    <string name="cd_forward">Forward</string>
+    <string name="cd_reload">Reload</string>
+    <string name="cd_zoom_out">Smaller text</string>
+    <string name="cd_zoom_in">Larger text</string>
+    <string name="cd_menu">Menu</string>
+
+    <string name="menu_reload">Reload</string>
+    <string name="menu_browser">Open in browser</string>
+    <string name="menu_share">Share link</string>
+    <string name="menu_desktop">Desktop site</string>
+    <string name="menu_dark">Dark mode</string>
+    <string name="menu_lite">Data saver (no images)</string>
+    <string name="menu_zoom_reset">Reset text size</string>
+    <string name="menu_clear">Reset (cache &amp; login)</string>
+    <string name="menu_about">About</string>
+
+    <string name="clear_confirm_title">Reset everything?</string>
+    <string name="clear_confirm_text">Cache and login will be deleted. You will need to sign in to arena.ai again.</string>
+    <string name="clear_confirm_yes">Reset</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="retry">Try again</string>
+    <string name="open_browser">Open in browser</string>
+    <string name="pick_file">Choose file</string>
+
+    <string name="toast_zoom">Text size: %1$d %%</string>
+    <string name="toast_no_app">No matching app found</string>
+    <string name="toast_download">Download started</string>
+    <string name="toast_download_error">Download not possible</string>
+    <string name="toast_restored">The page has been restored</string>
+    <string name="toast_desktop_on">Desktop site: on</string>
+    <string name="toast_desktop_off">Desktop site: off</string>
+    <string name="toast_dark_on">Dark mode: on</string>
+    <string name="toast_dark_off">Dark mode: off</string>
+    <string name="toast_lite_on">Data saver: on – images hidden</string>
+    <string name="toast_lite_off">Data saver: off</string>
+
+    <string name="about_text">Arena for Android\nVersion %1$s\n\nA lean app that provides arena.ai quickly and reliably.\nOptimized for devices up to Android 7, runs on Android 4.4+.\n\nIf the page ever crashes, the app reloads it automatically.</string>
+</resources>
