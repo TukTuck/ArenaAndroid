@@ -27,10 +27,11 @@ robusten eigenen Rahmen:
 | | |
 |---|---|
 | Läuft ab | **Android 4.4** (API 19) |
-| Optimiert für | **bis Android 7** (API 24/25) – das Zielszenario „max Android 7“ |
-| läuft auch | auf neueren Geräten (bewusst **kein** `maxSdkVersion`; ab Android 8 sorgt der integrierte Renderer-Crash-Schutz für extra Stabilität) |
+| Optimiert für | **bis Android 7** (API 24/25) – Referenzgerät: Galaxy S8 mit Android 7 |
+| läuft auch | auf neueren Geräten (bewusst **kein** `maxSdkVersion`) – Referenzgerät: Galaxy XCover 5 mit Android 14; ab Android 8 sorgt der integrierte Renderer-Crash-Schutz für extra Stabilität |
 | Technik | reine WebView-App, keine externen Bibliotheken, APK ≈ 160 KB |
 | Dex-Format | 035 (kompatibel bis runter zu Android 4.x) |
+| Signatur | v1 + v2 + v3 (auf Android 7 **und** Android 14 installierbar) |
 
 > Tipp für Android 5–7: Die WebView-Komponente lässt sich über den Play Store
 > („Android-System-WebView“) aktualisieren – das bringt oft einen spürbaren
