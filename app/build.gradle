@@ -1,0 +1,55 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'de.tuktuck.arena'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'de.tuktuck.arena'
+        // minSdk 19 (Android 4.4): deckt "max Android 7" ab und läuft auch darunter.
+        // Bewusst KEIN maxSdkVersion – die App lässt sich auch auf neueren Geräten
+        // installieren (für Details siehe README).
+        minSdk 19
+        // Ziel-Ära: Android 7 und älter (API 25 ist Android 7.1.1).
+        // targetSdk 28 vermeidet moderne Zwänge (Background-Limits, Scoped Storage),
+        // ohne auf alten Geräten Nachteile zu haben.
+        targetSdk 28
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    signingConfigs {
+        // Sideload-Signatur: Release wird mit dem Debug-Key signiert,
+        // damit Updates über "App installieren" einfach nachinstallierbar sind.
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Bewusst leer: nur Framework-API für maximale Kompatibilität und minimale APK-Größe.
+}

@@ -1,0 +1,17 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Debug-Keystore (lokal generiert, nicht committen)
+*.jks
+*.keystore
+
+# OS
+.DS_Store
+Thumbs.db

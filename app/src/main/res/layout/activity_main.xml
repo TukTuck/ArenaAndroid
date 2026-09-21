@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/window_bg"
+    android:orientation="vertical">
+
+    <!-- Werkzeugleiste: große, gut erreichbare Schaltflächen (min. 48 dp) -->
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/toolbar_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingEnd="4dp"
+        android:paddingStart="4dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_back"
+            android:padding="13dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_back" />
+
+        <ImageView
+            android:id="@+id/btn_forward"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_forward"
+            android:padding="13dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_forward" />
+
+        <ImageView
+            android:id="@+id/btn_reload"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_reload"
+            android:padding="12dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_reload" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btn_zoom_out"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_zoom_out"
+            android:gravity="center"
+            android:text="A−"
+            android:textColor="@color/icon"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_zoom_in"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_zoom_in"
+            android:gravity="center"
+            android:text="A+"
+            android:textColor="@color/icon"
+            android:textSize="21sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_menu"
+            android:layout_width="52dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_menu"
+            android:gravity="center"
+            android:text="⋮"
+            android:textColor="@color/icon"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/toolbar_border" />
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:max="100"
+        android:progressDrawable="@drawable/progress_horizontal" />
+
+    <WebView
+        android:id="@+id/web"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>
