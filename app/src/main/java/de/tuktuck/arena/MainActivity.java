@@ -734,7 +734,9 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (web != null) {
-            outState.putBundle("webstate", web.saveState());
+            Bundle state = new Bundle();
+            web.saveState(state);
+            outState.putBundle("webstate", state);
         }
     }
 
