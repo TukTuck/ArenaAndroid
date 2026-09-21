@@ -35,7 +35,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex" "$OUT/keys"
 
 echo "== 1/6 Manifest =="
-sed 's|<manifest |<manifest package="de.tuktuck.arena" |' \
+# Package + Versionen für aapt2 einsetzen (bei Gradle-Builds kommt das aus build.gradle)
+sed 's|<manifest |<manifest package="de.tuktuck.arena" android:versionCode="1" android:versionName="'"$VERSION"'" |' \
   app/src/main/AndroidManifest.xml > "$OUT/AndroidManifest.xml"
 
 echo "== 2/6 Ressourcen (aapt2) =="
@@ -82,15 +83,17 @@ print("classes.dex eingefügt")
 PYEOF
 
 echo "== 6/6 Signieren (v1+v2+v3) =="
-if [ ! -f "$OUT/keys/debug.key.pem" ]; then
-  echo "Debug-Schlüssel erzeugen (bitte für Updates aufbewahren: $OUT/keys/)"
-  openssl genrsa -out "$OUT/keys/debug.key.pem" 2048 2>/dev/null
-  openssl req -x509 -new -key "$OUT/keys/debug.key.pem" \
-    -out "$OUT/keys/debug.cert.pem" -days 10000 \
+KEYS=keystore
+mkdir -p "$KEYS"
+if [ ! -f "$KEYS/debug.key.pem" ]; then
+  echo "Debug-Schlüssel erzeugen – BITTE AUFBEWAHREN (nötig für Updates): $KEYS/"
+  openssl genrsa -out "$KEYS/debug.key.pem" 2048 2>/dev/null
+  openssl req -x509 -new -key "$KEYS/debug.key.pem" \
+    -out "$KEYS/debug.cert.pem" -days 10000 \
     -subj "/CN=Android Debug/O=Android/C=US" 2>/dev/null
 fi
 node scripts/sign-apk.mjs "$OUT/app-unsigned.apk" "$OUT/arena-$VERSION.apk" \
-  "$OUT/keys/debug.key.pem" "$OUT/keys/debug.cert.pem"
+  "$KEYS/debug.key.pem" "$KEYS/debug.cert.pem"
 
 echo
 echo "FERTIG: $OUT/arena-$VERSION.apk"

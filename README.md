@@ -38,15 +38,17 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden (siehe GitHub-Release **v0.1.0** – Datei `arena-0.1.0.apk`)
+1. Die APK laden: entweder aus dem GitHub-Release **v0.1.0**, direkt aus diesem
+   Repo (`release/arena-0.1.0.apk`) oder aus dem Chat-Anhang.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“
    für den Browser/die Dateiverwaltung erlauben.
 3. Fertig. Wer möchte, kann beim ersten Start den Launcher-Dialog nutzen, um
    arena.ai-Links standardmäßig in der App zu öffnen.
 
 **Wichtig für Updates:** Jede neue Version muss mit demselben Schlüssel signiert
-sein. Der Debug-Schlüssel liegt nach dem Build in `build/keys/` – bitte
-aufbewahren (sonst ist ein Update nur mit Deinstallation möglich).
+sein. Der Debug-Schlüssel liegt nach dem ersten Build in `keystore/` – bitte
+diesen Ordner aufbewahren (sonst ist ein Update nur mit Deinstallation möglich).
+Der Ordner ist aus gutem Grund **nicht** in Git enthalten.
 
 ## Bauen – zwei Wege
 
@@ -98,7 +100,7 @@ build.sh                         # APK-Build ohne Android Studio
 
 ## Hinweise
 
-* Beim ersten Build erzeugt `build.sh` unter `build/keys/` ein Debug-Zertifikat
+* Beim ersten Build erzeugt `build.sh` unter `keystore/` ein Debug-Zertifikat
   (10 000 Tage gültig). Für Folgeversionen bitte dieselben Dateien verwenden.
 * Die App speichert nur lokale Einstellungen (Schriftgröße, Modi) und die
   normalen Web-Login-Daten von arena.ai – es gibt kein eigenes Tracking.

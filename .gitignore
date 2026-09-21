@@ -8,9 +8,10 @@ captures/
 .externalNativeBuild/
 .cxx/
 
-# Debug-Keystore (lokal generiert, nicht committen)
+# Debug-Keystore (lokal generiert, nicht committen – nötig für Updates!)
 *.jks
 *.keystore
+keystore/
 
 # OS
 .DS_Store
