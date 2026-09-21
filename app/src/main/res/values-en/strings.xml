@@ -14,6 +14,7 @@
     <string name="menu_share">Share link</string>
     <string name="menu_desktop">Desktop site</string>
     <string name="menu_dark">Dark mode</string>
+    <string name="menu_lite">Data saver (no images)</string>
     <string name="menu_zoom_reset">Reset text size</string>
     <string name="menu_clear">Reset (cache &amp; login)</string>
     <string name="menu_about">About</string>
@@ -36,6 +37,8 @@
     <string name="toast_desktop_off">Desktop site: off</string>
     <string name="toast_dark_on">Dark mode: on</string>
     <string name="toast_dark_off">Dark mode: off</string>
+    <string name="toast_lite_on">Data saver: on – images hidden</string>
+    <string name="toast_lite_off">Data saver: off</string>
 
     <string name="about_text">Arena for Android\nVersion %1$s\n\nA lean app that provides arena.ai quickly and reliably.\nOptimized for devices up to Android 7, runs on Android 4.4+.\n\nIf the page ever crashes, the app reloads it automatically.</string>
 </resources>

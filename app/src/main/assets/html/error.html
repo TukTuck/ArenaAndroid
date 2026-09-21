@@ -19,6 +19,10 @@
   }
   h1 { font-size: 26px; margin: 0 0 12px; }
   p { font-size: 17px; line-height: 1.55; color: #3c4043; margin: 0 0 32px; }
+  .details {
+    font-size: 12px; color: #80868b; line-height: 1.5;
+    margin: -16px 0 24px; word-break: break-all;
+  }
   button {
     width: 100%; min-height: 60px; font-size: 20px; font-weight: 600;
     color: #fff; background: #1a73e8; border: 0; border-radius: 14px; margin-bottom: 14px;
@@ -33,14 +37,24 @@
     <div class="icon">!</div>
     <h1>Seite konnte nicht geladen werden</h1>
     <p id="msg">Die Verbindung zu arena.ai wurde unterbrochen oder die Seite ist derzeit nicht erreichbar.</p>
+    <p class="details" id="details"></p>
     <button onclick="ArenaApp.retry()">Erneut versuchen</button>
     <button class="secondary" onclick="ArenaApp.openBrowser()">Im Browser öffnen</button>
   </div>
 <script>
   try {
-    if (location.search.indexOf('cert=1') >= 0) {
+    var q = location.search;
+    if (q.indexOf('cert=1') >= 0) {
       document.getElementById('msg').textContent =
-        'Das Sicherheitszertifikat der Seite ist ungültig. Zum Schutz wurde die Verbindung abgebrochen.';
+        'Das Sicherheitszertifikat der Seite ist ungältig. Zum Schutz wurde die Verbindung abgebrochen.';
+    }
+    var parts = [];
+    var mUrl = /[?&]url=([^&]*)/.exec(q);
+    var mCode = /[?&]code=([^&]*)/.exec(q);
+    if (mUrl) parts.push('Adresse: ' + decodeURIComponent(mUrl[1]));
+    if (mCode) parts.push('Code: ' + decodeURIComponent(mCode[1]));
+    if (parts.length) {
+      document.getElementById('details').textContent = parts.join('  ·  ');
     }
   } catch (e) {}
 </script>

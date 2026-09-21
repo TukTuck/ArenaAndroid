@@ -15,6 +15,7 @@
     <string name="menu_share">Link teilen</string>
     <string name="menu_desktop">Desktop-Website</string>
     <string name="menu_dark">Dunkler Modus</string>
+    <string name="menu_lite">Sparmodus (Bilder aus)</string>
     <string name="menu_zoom_reset">Schriftgröße zurücksetzen</string>
     <string name="menu_clear">Zurücksetzen (Cache &amp; Login)</string>
     <string name="menu_about">Über</string>
@@ -37,6 +38,8 @@
     <string name="toast_desktop_off">Desktop-Website: Aus</string>
     <string name="toast_dark_on">Dunkler Modus: An</string>
     <string name="toast_dark_off">Dunkler Modus: Aus</string>
+    <string name="toast_lite_on">Sparmodus: An – Bilder aus</string>
+    <string name="toast_lite_off">Sparmodus: Aus</string>
 
     <string name="about_text">Arena für Android\nVersion %1$s\n\nSchlanke App, die arena.ai schnell und stabil bereitstellt.\nOptimiert für Geräte bis Android 7, läuft ab Android 4.4.\n\nFalls die Seite einmal abstürzt, lädt die App sie automatisch neu.</string>
 </resources>

@@ -18,6 +18,10 @@
         android:checkable="true"
         android:title="@string/menu_dark" />
     <item
+        android:id="@+id/menu_lite"
+        android:checkable="true"
+        android:title="@string/menu_lite" />
+    <item
         android:id="@+id/menu_zoom_reset"
         android:title="@string/menu_zoom_reset" />
     <item

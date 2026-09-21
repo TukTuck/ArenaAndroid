@@ -5,9 +5,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.net.ConnectivityManager;
@@ -43,9 +46,11 @@ public class MainActivity extends Activity {
 
     private static final String PREFS = "arena";
     private static final String JS_BRIDGE = "ArenaApp";
+    private static final String LOCAL_PREFIX = "file:///android_asset/";
     private static final int REQ_FILE = 2001;
     private static final int ZOOM_MIN = 50;
     private static final int ZOOM_MAX = 300;
+    private static final long ERROR_DEDUP_MS = 2500;
 
     /** Dunkler Modus für die Webseite (invertierter Filter, bewusst einfach gehalten). */
     static final String JS_DARK =
@@ -84,6 +89,10 @@ public class MainActivity extends Activity {
 
     private String pendingRetryUrl;
     private JsBridge bridge;
+
+    private String lastErrorUrl;
+    private long lastErrorAt;
+    private BroadcastReceiver netReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,6 +154,7 @@ public class MainActivity extends Activity {
         setupWebView();
         web.getSettings().setTextZoom(prefs.getInt("zoom", 100));
         applyUserAgent();
+        applyLite();
 
         boolean restored = false;
         if (savedInstanceState != null) {
@@ -162,21 +172,18 @@ public class MainActivity extends Activity {
         }
 
         if (getIntent() != null && getIntent().getBooleanExtra("crashed", false)) {
-            Toast.makeText(this, R.string.toast_restored, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.toast_restored, Toast.LENGTH_SHORT).show();
         }
         updateNavState();
     }
 
-    /** Bei unerwarteten Abstürzen die Seite automatisch wiederherstellen. */
+    /** Bei unerwarteten Abstürzen still wiederherstellen (ohne Absturzdialog-Serie). */
     private void installCrashRecovery() {
-        final Thread.UncaughtExceptionHandler defaultHandler =
-                Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 try {
-                    SharedPreferences p =
-                            getSharedPreferences(PREFS, MODE_PRIVATE);
+                    SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
                     long last = p.getLong("last_crash", 0);
                     long now = System.currentTimeMillis();
                     if (now - last > 15000) {
@@ -185,12 +192,15 @@ public class MainActivity extends Activity {
                         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         i.putExtra("crashed", true);
                         startActivity(i);
+                        // Prozess direkt beenden – kein „App wurde beendet"-Dialog, keine Schleife.
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(10);
                     }
                 } catch (Throwable ignored) {
                 }
-                if (defaultHandler != null) {
-                    defaultHandler.uncaughtException(t, e);
-                }
+                // Innerhalb von 15 s erneut abgestürzt: echter Fehler, normal sterben lassen.
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(11);
             }
         });
     }
@@ -270,43 +280,59 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (isOnline()) {
-                    loadMain(pendingRetryUrl != null ? pendingRetryUrl : HOME_URL);
-                } else {
-                    showOfflinePage();
-                }
+                loadMain(pendingRetryUrl != null ? pendingRetryUrl : HOME_URL);
             }
         });
     }
 
     private void reloadCurrent() {
-        if (!isOnline()) {
-            showOfflinePage();
-            return;
-        }
         String u = web.getUrl();
-        if (u != null && u.startsWith("file:///android_asset/")) {
+        if (u != null && u.startsWith(LOCAL_PREFIX)) {
             loadMain(pendingRetryUrl != null ? pendingRetryUrl : HOME_URL);
         } else {
             web.reload();
         }
     }
 
+    private static boolean isLocalPage(String url) {
+        return url != null && url.startsWith(LOCAL_PREFIX);
+    }
+
     private void showOfflinePage() {
+        onProgressUi(100);
         addJsBridge();
-        web.loadUrl("file:///android_asset/html/offline.html");
+        web.loadUrl(LOCAL_PREFIX + "html/offline.html");
     }
 
-    private void showErrorPage(boolean cert) {
+    private void showErrorPage(boolean cert, int code, String url) {
+        onProgressUi(100);
         addJsBridge();
-        web.loadUrl("file:///android_asset/html/error.html" + (cert ? "?cert=1" : ""));
+        StringBuilder q = new StringBuilder(LOCAL_PREFIX + "html/error.html?");
+        if (cert) {
+            q.append("cert=1&");
+        }
+        q.append("code=").append(code);
+        if (url != null) {
+            q.append("&url=").append(Uri.encode(url));
+        }
+        web.loadUrl(q.toString());
     }
 
-    void onMainFrameError(String url, boolean cert) {
+    void onMainFrameError(String url, boolean cert, int code) {
+        long now = System.currentTimeMillis();
+        if (url != null && url.equals(lastErrorUrl) && now - lastErrorAt < ERROR_DEDUP_MS) {
+            return; // keine Fehlerflut für dieselbe Adresse
+        }
+        lastErrorUrl = url;
+        lastErrorAt = now;
         if (url != null && url.startsWith("http")) {
             pendingRetryUrl = url;
         }
-        showErrorPage(cert);
+        if (!cert && !isOnline()) {
+            showOfflinePage();
+        } else {
+            showErrorPage(cert, code, url);
+        }
     }
 
     void onRendererGone() {
@@ -326,6 +352,10 @@ public class MainActivity extends Activity {
         } catch (Throwable t) {
             return true;
         }
+    }
+
+    String getPendingUrl() {
+        return pendingRetryUrl;
     }
 
     private void addJsBridge() {
@@ -351,11 +381,20 @@ public class MainActivity extends Activity {
     }
 
     void onPageStartedUi(String url) {
-        removeJsBridge();
+        // WICHTIG: Auf lokalen Fehlerseiten muss die JS-Brücke bestehen bleiben,
+        // sonst reagieren „Erneut versuchen"/„Im Browser öffnen" nicht.
+        if (isLocalPage(url)) {
+            addJsBridge();
+        } else {
+            removeJsBridge();
+        }
         updateNavState();
     }
 
     void onPageFinishedUi(String url) {
+        if (isLocalPage(url)) {
+            addJsBridge();
+        }
         updateNavState();
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
             if (isDarkMode()) {
@@ -406,6 +445,7 @@ public class MainActivity extends Activity {
         popup.getMenuInflater().inflate(R.menu.main, popup.getMenu());
         popup.getMenu().findItem(R.id.menu_desktop).setChecked(isDesktop());
         popup.getMenu().findItem(R.id.menu_dark).setChecked(isDarkMode());
+        popup.getMenu().findItem(R.id.menu_lite).setChecked(isLite());
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -421,6 +461,8 @@ public class MainActivity extends Activity {
                     toggleDesktop();
                 } else if (id == R.id.menu_dark) {
                     toggleDark();
+                } else if (id == R.id.menu_lite) {
+                    toggleLite();
                 } else if (id == R.id.menu_zoom_reset) {
                     web.getSettings().setTextZoom(100);
                     prefs.edit().putInt("zoom", 100).commit();
@@ -454,12 +496,32 @@ public class MainActivity extends Activity {
                 Toast.LENGTH_SHORT).show();
     }
 
+    private void toggleLite() {
+        boolean on = !isLite();
+        prefs.edit().putBoolean("lite", on).commit();
+        applyLite();
+        reloadCurrent();
+        Toast.makeText(this, on ? R.string.toast_lite_on : R.string.toast_lite_off,
+                Toast.LENGTH_SHORT).show();
+    }
+
     private boolean isDarkMode() {
         return prefs.getBoolean("dark", false);
     }
 
     private boolean isDesktop() {
         return prefs.getBoolean("desktop", false);
+    }
+
+    private boolean isLite() {
+        return prefs.getBoolean("lite", false);
+    }
+
+    /** Sparmodus: keine Bilder – spart Speicher/Fluss auf alten Geräten enorm. */
+    private void applyLite() {
+        boolean lite = isLite();
+        web.getSettings().setBlockNetworkImage(lite);
+        web.getSettings().setLoadsImagesAutomatically(!lite);
     }
 
     private void applyUserAgent() {
@@ -517,9 +579,10 @@ public class MainActivity extends Activity {
                 cm.removeAllCookie();
                 CookieSyncManager.getInstance().sync();
             }
-            prefs.edit().remove("zoom").remove("dark").remove("desktop").commit();
+            prefs.edit().remove("zoom").remove("dark").remove("desktop").remove("lite").commit();
             web.getSettings().setTextZoom(100);
             applyUserAgent();
+            applyLite();
             loadMain(HOME_URL);
         } catch (Throwable ignored) {
         }
@@ -557,7 +620,7 @@ public class MainActivity extends Activity {
         }
         if ("file".equals(scheme)) {
             // Eigene Fehlerseiten zulassen, alles andere blockieren.
-            return !url.startsWith("file:///android_asset/");
+            return !url.startsWith(LOCAL_PREFIX);
         }
         if ("about".equals(scheme) || "data".equals(scheme) || "blob".equals(scheme)) {
             return false;
@@ -740,8 +803,43 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Bei wiederkehrender Verbindung die Fehler-/Offlineseite automatisch neu laden. */
+    private void ensureNetReceiver() {
+        if (netReceiver != null) {
+            return;
+        }
+        netReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                try {
+                    String u = (web != null) ? web.getUrl() : null;
+                    if (isOnline() && isLocalPage(u)) {
+                        retryLoad();
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        };
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (web != null) {
+            web.onResume();
+        }
+        ensureNetReceiver();
+        registerReceiver(netReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
+
     @Override
     protected void onPause() {
+        try {
+            if (netReceiver != null) {
+                unregisterReceiver(netReceiver);
+            }
+        } catch (Throwable ignored) {
+        }
         super.onPause();
         if (web != null) {
             web.onPause();
@@ -754,14 +852,6 @@ public class MainActivity extends Activity {
                 CookieSyncManager.getInstance().sync();
             }
         } catch (Throwable ignored) {
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (web != null) {
-            web.onResume();
         }
     }
 

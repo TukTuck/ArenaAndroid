@@ -30,13 +30,14 @@ if [ -z "$ANDROID_JAR" ] || [ -z "$SOOT_DIR" ]; then
 fi
 
 VERSION=$(grep -oP "versionName '\K[^']+" app/build.gradle)
+VC=$(grep -oP "versionCode \K[0-9]+" app/build.gradle)
 OUT=build
 rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex" "$OUT/keys"
 
 echo "== 1/6 Manifest =="
 # Package + Versionen für aapt2 einsetzen (bei Gradle-Builds kommt das aus build.gradle)
-sed 's|<manifest |<manifest package="de.tuktuck.arena" android:versionCode="1" android:versionName="'"$VERSION"'" |' \
+sed 's|<manifest |<manifest package="de.tuktuck.arena" android:versionCode="'"$VC"'" android:versionName="'"$VERSION"'" |' \
   app/src/main/AndroidManifest.xml > "$OUT/AndroidManifest.xml"
 
 echo "== 2/6 Ressourcen (aapt2) =="
