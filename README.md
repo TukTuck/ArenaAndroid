@@ -97,6 +97,7 @@ app/src/main/
 └── assets/html/                 # Offline- & Fehlerseite (mit „Erneut versuchen“)
 scripts/sign-apk.mjs             # Signierung (v1+v2+v3) via apk_sign_ts
 build.sh                         # APK-Build ohne Android Studio
+release/arena-<version>.apk      # fertige, signierte APK zum Sideloaden
 ```
 
 ## Hinweise
