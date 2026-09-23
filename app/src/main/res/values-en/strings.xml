@@ -5,6 +5,7 @@
     <string name="cd_back">Back</string>
     <string name="cd_forward">Forward</string>
     <string name="cd_reload">Reload</string>
+    <string name="cd_zoom_toggle">Turn zoom bar on or off</string>
     <string name="cd_zoom_out">Zoom out</string>
     <string name="cd_zoom_in">Zoom in</string>
     <string name="cd_menu">Menu</string>
@@ -31,6 +32,8 @@
     <string name="pick_file">Choose file</string>
 
     <string name="toast_zoom">Zoom: %1$d %%</string>
+    <string name="toast_zoom_bar_on">Zoom bar: on – A−/A+ scale the page</string>
+    <string name="toast_zoom_bar_off">Zoom bar: off – display like the browser</string>
     <string name="toast_login_none">Sign-in button not found on the page. Open the sidebar or sign in in the browser.</string>
     <string name="toast_no_app">No matching app found</string>
     <string name="toast_download">Download started</string>

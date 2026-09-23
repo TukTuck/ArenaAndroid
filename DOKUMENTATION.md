@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.6** (`versionCode` 9) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.7** (`versionCode` 10) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -255,6 +255,22 @@ Cookies bleiben sichtbar — das ist die Website, nicht unser Dialog. Nach Login
 - `versionCode` 9 / `versionName` 0.2.6.
 - `release/arena-0.2.6.apk` (175071 B, SHA-256 `958a47f771bdadcd156ff2f129ef468c68bc7a0076c712993197c94f9c72ca3d`).
 
+### 0.2.7 (2026-09-23) — Zoom-Leiste Standard AUS, Anzeige wie Chrome
+**Auftrag:** Zoom-Feature raus aus dem Default. Oben ein/aus. Aus = Standard. Nicht vorschreiben, wie groß die Seite sein soll — nehmen, was der Android-Chrome-Browser macht.
+
+**Was Chrome macht (kein Rätsel):** Viewport-Meta **der Seite**, Pinch-Zoom, keine A−/A+, kein CSS-`zoom` auf `html`, kein `setTextZoom`, kein Overview-Fit. WebView braucht `setUseWideViewPort(true)`, sonst ignoriert sie die Meta der Seite.
+
+**Fix:**
+- Toolbar: **Aa** schaltet die Zoom-Leiste. Standard **aus** (blass). A−/A+ nur sichtbar, wenn an (blau).
+- Leiste aus: kein CSS-zoom, kein Viewport-JS, kein `setTextZoom`, Overview **aus**. Pinch bleibt (wie Chrome).
+- Leiste an: bisheriges A−/A+ (CSS-zoom 25–300 %).
+- 0.2.6-Viewport-Inject und Overview-an sind damit wieder weg — das war „wir schreiben die Größe“.
+
+Vergleichstest: dieselbe URL in **Chrome** und in der App (Schild `0.2.7`, Aa blass). Wenn die App anders ist als Chrome, Screenshot beider — dann ist es WebView≠Chrome, nicht unser Zoom.
+
+- `versionCode` 10 / `versionName` 0.2.7.
+- `release/arena-0.2.7.apk` (SHA-256 folgt nach Build).
+
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
 ---
@@ -319,7 +335,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.3.apk` | Seiten-Zoom 25–300 % |
 | `release/arena-0.2.4.apk` | UA/Overview/kein Extra-JS |
 | `release/arena-0.2.5.apk` | Start `/code`, Desktop-Crop (nicht nutzen) |
-| `release/arena-0.2.6.apk` | **aktuell** — Viewport/Overview, Menü Anmelden |
+| `release/arena-0.2.6.apk` | Viewport-Inject (nicht Default) |
+| `release/arena-0.2.7.apk` | **aktuell** — Zoom-Leiste aus, wie Chrome |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -351,9 +368,9 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtest 0.2.5:** Schild `0.2.5`. Muss die **Produkt-UI** zeigen (Sidebar / „What would you like to do?“), nicht den Marketing-Hero. Chat-Öffnen-Zeit stoppen.
+1. **Feldtest 0.2.7:** Schild `0.2.7`, **Aa blass**, keine A−/A+. Vergleich mit Chrome dieselbe URL. Bei Bedarf Aa antippen.
 2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
-3. Zoom bewusst nicht weiter anfassen.
+3. Zoom nur noch hinter dem Aa-Schalter.
 4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
 5. PC-Ableger **ArenaPC** (`PROMPT-PC.md`) — bewusst zurückgestellt, erst die Android-App.
 

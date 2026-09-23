@@ -39,10 +39,10 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.6.apk`)
-   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.6` zeigen.
-   Startet auf **https://arena.ai/code**. Viewport wie Chrome (nicht Desktop-Crop).
-   Menü **Anmelden**, falls der Login in der Sidebar nicht erreichbar ist.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.7.apk`)
+   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.7` zeigen.
+   Startet auf **https://arena.ai/code**. Zoom-Leiste Standard **aus** (Aa blass) —
+   Anzeige wie Chrome, ohne Größen-Vorgabe. Aa schaltet A−/A+ ein.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“
    für den Browser/die Dateiverwaltung erlauben.
 3. Fertig. Wer möchte, kann beim ersten Start den Launcher-Dialog nutzen, um

@@ -68,23 +68,8 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
-    /**
-     * Chrome-Viewport: Breite = Gerät, Scale 1. Ohne das nimmt WebView oft ~980 px
-     * (Desktop) und zeigt bei Overview=off nur einen Crop — Cookies/Hero wirken
-     * 4× zu groß, CSS-Zoom 25 % „rettet“ visuell, ändert innerWidth aber nicht,
-     * deshalb scrollt die Sidebar nicht zum Login.
-     */
-    static final String JS_VIEWPORT =
-            "(function(){try{"
-                    + "var c='width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes';"
-                    + "var list=document.getElementsByName('viewport');"
-                    + "var m=null;"
-                    + "for(var i=0;i<list.length;i++){if(list[i].tagName==='META'){m=list[i];}}"
-                    + "if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');"
-                    + "(document.head||document.documentElement).appendChild(m);}"
-                    + "var cur=m.getAttribute('content')||'';"
-                    + "if(cur.indexOf('device-width')===-1){m.setAttribute('content',c);}"
-                    + "}catch(e){}})();";
+    static final String JS_CLEAR_ZOOM =
+            "(function(){try{document.documentElement.style.zoom='';}catch(e){}})();";
 
     /** Klickt den Login-Knopf der Seite (liegt oft unterhalb der sichtbaren Sidebar). */
     static final String JS_CLICK_LOGIN =
@@ -111,6 +96,7 @@ public class MainActivity extends Activity {
     private ImageView btnBack;
     private ImageView btnForward;
     private ImageView btnReload;
+    private TextView btnZoomToggle;
     private TextView btnZoomOut;
     private TextView btnZoomIn;
     private TextView btnMenu;
@@ -140,10 +126,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         installCrashRecovery();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        // 0.2.5: Nutzer hat A− auf 25 % gestellt, um den Desktop-Crop zu sehen.
-        // CSS-zoom ändert innerWidth nicht → Sidebar scrollt nicht. Einmal zurück.
-        if (!prefs.getBoolean("zoom_cleared_026", false)) {
-            prefs.edit().putInt("zoom", 100).putBoolean("zoom_cleared_026", true).commit();
+        // 0.2.7: Zoom-Leiste Standard AUS, kein gespeicherter CSS-Zoom von 0.2.5.
+        if (!prefs.getBoolean("zoom_bar_default_027", false)) {
+            prefs.edit().putBoolean("zoom_bar", false).putInt("zoom", 100)
+                    .putBoolean("zoom_bar_default_027", true).commit();
         }
         zoomTouched = false;
         setContentView(R.layout.activity_main);
@@ -153,11 +139,13 @@ public class MainActivity extends Activity {
         btnBack = (ImageView) findViewById(R.id.btn_back);
         btnForward = (ImageView) findViewById(R.id.btn_forward);
         btnReload = (ImageView) findViewById(R.id.btn_reload);
+        btnZoomToggle = (TextView) findViewById(R.id.btn_zoom_toggle);
         btnZoomOut = (TextView) findViewById(R.id.btn_zoom_out);
         btnZoomIn = (TextView) findViewById(R.id.btn_zoom_in);
         btnMenu = (TextView) findViewById(R.id.btn_menu);
         lblVersion = (TextView) findViewById(R.id.lbl_version);
         bindVersionBadge();
+        applyZoomBarUi();
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,6 +167,12 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 reloadCurrent();
+            }
+        });
+        btnZoomToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleZoomBar();
             }
         });
         btnZoomOut.setOnClickListener(new View.OnClickListener() {
@@ -260,16 +254,14 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setLoadsImagesAutomatically(true);
+        // Wie Chrome: Viewport-Meta der Seite gilt. Kein Overview-Zwangs-Fit,
+        // keine TextZoom-Vorgabe, kein injiziertes width=device-width.
         s.setUseWideViewPort(true);
-        // Overview AN: ohne Viewport-Meta legt WebView ~980 px Desktop an und zeigt
-        // bei Overview=off nur den Crop (Cookies riesig). Mit device-width (JS_VIEWPORT)
-        // ist die Seite schon bildschirmbreit → Overview-Scale ≈ 1, Chats nicht extra klein.
-        s.setLoadWithOverviewMode(true);
+        s.setLoadWithOverviewMode(false);
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
         s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-        s.setTextZoom(100);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
@@ -462,21 +454,6 @@ public class MainActivity extends Activity {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setProgress(progress);
         }
-        if (progress >= 10) {
-            applyMobileViewport();
-        }
-    }
-
-    /** Viewport so früh wie möglich, sonst hydriert die SPA auf Desktop-Breite. */
-    void applyMobileViewport() {
-        if (web == null) {
-            return;
-        }
-        String url = web.getUrl();
-        if (isLocalPage(url)) {
-            return;
-        }
-        web.evaluateJavascript(JS_VIEWPORT, null);
     }
 
     void onPageStartedUi(String url) {
@@ -496,12 +473,13 @@ public class MainActivity extends Activity {
         }
         updateNavState();
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
-            applyMobileViewport();
             if (isDarkMode()) {
                 web.evaluateJavascript(JS_DARK, null);
             }
             web.evaluateJavascript(JS_KEEP_BLANK, null);
-            applyPageZoom();
+            if (isZoomBar()) {
+                applyPageZoom();
+            }
         }
     }
 
@@ -537,16 +515,49 @@ public class MainActivity extends Activity {
         return z;
     }
 
+    private boolean isZoomBar() {
+        return prefs.getBoolean("zoom_bar", false);
+    }
+
+    private void applyZoomBarUi() {
+        boolean on = isZoomBar();
+        if (btnZoomToggle != null) {
+            btnZoomToggle.setAlpha(on ? 1f : 0.4f);
+            btnZoomToggle.setTextColor(getResources().getColor(on ? R.color.accent : R.color.icon));
+        }
+        int vis = on ? View.VISIBLE : View.GONE;
+        if (btnZoomOut != null) {
+            btnZoomOut.setVisibility(vis);
+        }
+        if (btnZoomIn != null) {
+            btnZoomIn.setVisibility(vis);
+        }
+    }
+
+    private void toggleZoomBar() {
+        boolean on = !isZoomBar();
+        prefs.edit().putBoolean("zoom_bar", on).commit();
+        applyZoomBarUi();
+        if (!on) {
+            zoomTouched = false;
+            if (web != null) {
+                web.evaluateJavascript(JS_CLEAR_ZOOM, null);
+            }
+        } else {
+            applyPageZoom();
+        }
+        Toast.makeText(this, on ? R.string.toast_zoom_bar_on : R.string.toast_zoom_bar_off,
+                Toast.LENGTH_SHORT).show();
+    }
+
     /**
-     * CSS-Zoom nur, wenn der Nutzer A−/A+ benutzt hat.
-     * Bei 100 % und unberührtem Zoom: nichts injizieren – arena.ai soll sein
-     * eigenes Layout ungestört fahren (sonst Relayout bei jedem pageFinished).
+     * CSS-Zoom nur bei eingeschalteter Zoom-Leiste und nach A−/A+.
+     * Leiste aus (Standard): nichts injizieren, Anzeige wie Chrome.
      */
     private void applyPageZoom() {
-        if (web == null) {
+        if (web == null || !isZoomBar()) {
             return;
         }
-        web.getSettings().setTextZoom(100);
         String url = web.getUrl();
         if (isLocalPage(url)) {
             return;
@@ -782,12 +793,13 @@ public class MainActivity extends Activity {
                 cm.removeAllCookie();
                 CookieSyncManager.getInstance().sync();
             }
-            prefs.edit().remove("zoom").remove("dark").remove("desktop").remove("lite").commit();
+            prefs.edit().remove("zoom").remove("zoom_bar").remove("dark").remove("desktop")
+                    .remove("lite").commit();
             zoomTouched = false;
-            web.getSettings().setTextZoom(100);
+            applyZoomBarUi();
             applyUserAgent();
             applyLite();
-            applyPageZoom();
+            web.evaluateJavascript(JS_CLEAR_ZOOM, null);
             loadMain(HOME_URL);
         } catch (Throwable ignored) {
         }

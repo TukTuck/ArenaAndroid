@@ -6,6 +6,7 @@
     <string name="cd_back">Zurück</string>
     <string name="cd_forward">Vorwärts</string>
     <string name="cd_reload">Neu laden</string>
+    <string name="cd_zoom_toggle">Zoom-Leiste ein- oder ausschalten</string>
     <string name="cd_zoom_out">Verkleinern</string>
     <string name="cd_zoom_in">Vergrößern</string>
     <string name="cd_menu">Menü</string>
@@ -32,6 +33,8 @@
     <string name="pick_file">Datei auswählen</string>
 
     <string name="toast_zoom">Zoom: %1$d %%</string>
+    <string name="toast_zoom_bar_on">Zoom-Leiste: An – A−/A+ skalieren die Seite</string>
+    <string name="toast_zoom_bar_off">Zoom-Leiste: Aus – Anzeige wie im Browser</string>
     <string name="toast_login_none">Login-Knopf auf der Seite nicht gefunden. Sidebar aufklappen oder im Browser anmelden.</string>
     <string name="toast_no_app">Keine passende App gefunden</string>
     <string name="toast_download">Download gestartet</string>

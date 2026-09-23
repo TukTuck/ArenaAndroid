@@ -68,29 +68,44 @@
             android:textSize="10sp"
             android:textStyle="bold" />
 
+        <!-- Zoom-Leiste: Standard AUS (wie Chrome, keine Größen-Vorgabe). Aa schaltet A−/A+ ein. -->
+        <TextView
+            android:id="@+id/btn_zoom_toggle"
+            android:layout_width="44dp"
+            android:layout_height="48dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_zoom_toggle"
+            android:gravity="center"
+            android:text="Aa"
+            android:textColor="@color/icon"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/btn_zoom_out"
-            android:layout_width="52dp"
+            android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_zoom_out"
             android:gravity="center"
             android:text="A−"
             android:textColor="@color/icon"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_zoom_in"
-            android:layout_width="52dp"
+            android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_zoom_in"
             android:gravity="center"
             android:text="A+"
             android:textColor="@color/icon"
-            android:textSize="21sp"
-            android:textStyle="bold" />
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_menu"
