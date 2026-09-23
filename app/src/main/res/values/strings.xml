@@ -12,6 +12,7 @@
     <string name="cd_version">App-Version</string>
 
     <string name="menu_reload">Neu laden</string>
+    <string name="menu_login">Anmelden</string>
     <string name="menu_browser">Im Browser öffnen</string>
     <string name="menu_share">Link teilen</string>
     <string name="menu_desktop">Desktop-Website</string>
@@ -31,6 +32,7 @@
     <string name="pick_file">Datei auswählen</string>
 
     <string name="toast_zoom">Zoom: %1$d %%</string>
+    <string name="toast_login_none">Login-Knopf auf der Seite nicht gefunden. Sidebar aufklappen oder im Browser anmelden.</string>
     <string name="toast_no_app">Keine passende App gefunden</string>
     <string name="toast_download">Download gestartet</string>
     <string name="toast_download_error">Download nicht möglich</string>

@@ -11,6 +11,7 @@
     <string name="cd_version">App version</string>
 
     <string name="menu_reload">Reload</string>
+    <string name="menu_login">Sign in</string>
     <string name="menu_browser">Open in browser</string>
     <string name="menu_share">Share link</string>
     <string name="menu_desktop">Desktop site</string>
@@ -30,6 +31,7 @@
     <string name="pick_file">Choose file</string>
 
     <string name="toast_zoom">Zoom: %1$d %%</string>
+    <string name="toast_login_none">Sign-in button not found on the page. Open the sidebar or sign in in the browser.</string>
     <string name="toast_no_app">No matching app found</string>
     <string name="toast_download">Download started</string>
     <string name="toast_download_error">Download not possible</string>

@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.5** (`versionCode` 8) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.6** (`versionCode` 9) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -231,7 +231,29 @@ Die App startete bisher auf `/`. Deshalb wirkte es wie „eine andere, kaputte V
 
 **Signatur:** Diese Session hatte den Debug-Schlüssel von 0.2.1–0.2.4 **nicht** (`keystore/` ist gitignoriert, Sandbox war frisch). 0.2.5 ist mit einem **neuen** Schlüssel signiert. Android lässt das nicht als Update zu → **einmal 0.2.4 deinstallieren**, dann 0.2.5 sideloaden. Danach wieder Updates ohne Deinstall, solange derselbe Schlüssel da ist.
 
-Gestriger Emulator-Screen: in **dieser** Session nicht im Archiv. Der X5-Chrome-Stand reicht als Beweis.
+**Nutzer zum Install:** Drag-and-Drop der APK reicht, kein extra Deinstall-Ritual.
+
+### 0.2.6 (2026-09-23) — Viewport wie Chrome, Login erreichbar
+**Beleg:** Screenshots 0.2.5, 22:54–22:57, Schild `0.2.5`.
+1. Start: Cookie-Text riesig, nur Crop (goldenes „frontier“ an den Rändern).
+2. A− auf 25 %: Cookie-Dialog komplett, Accept sichtbar.
+3. Cookies angenommen: Hero „Experience the frontier“ + Composer — **ausgeloggt**.
+4. Linke Sidebar: N…/Lead/S… abgeschnitten, „Get More Done With Agents“, Login darunter **nicht erreichbar**, kein Scroll.
+
+**Was 0.2.5 nicht war:** `/code` ohne Login **ist** der Hero. Chrome-X5-Bilder waren eingeloggt (`borny22@…`). Die URL-Änderung war richtig, die Session nicht.
+
+**BUG 6 — Desktop-Viewport, Overview aus.**
+*Was:* 0.2.4 hat `setLoadWithOverviewMode(false)` gesetzt, ohne `width=device-width` zu erzwingen. WebView legt dann oft ~980–1440 px Desktop an und zeigt bei Scale 1 nur den **Crop**. 100 % wirkt 4× zu groß. CSS-`zoom: 25 %` macht den Crop sichtbar, ändert aber **nicht** `window.innerWidth` → die Seite bleibt im Desktop-Breakpoint, Sidebar-Overflow stirbt, Login unter dem Promo-Block.
+*Fix:*
+- Viewport-Meta `width=device-width, initial-scale=1` früh injizieren (`onProgress` ab 10 % + `onPageFinished`), nur wenn noch kein `device-width`.
+- Overview **wieder an**: Sicherheitsnetz für den ersten Paint (Cookies), mit device-width Scale ≈ 1 (Chats nicht extra klein).
+- Gespeicherten 25 %-Zoom von 0.2.5 **einmal** auf 100 % zurück (`zoom_cleared_026`). CSS-Zoom weiter nur nach A−/A+.
+- Menü **Anmelden** klickt den Login-Knopf der Seite (kein Auto-Accept der Cookies).
+
+Cookies bleiben sichtbar — das ist die Website, nicht unser Dialog. Nach Login sollte die Chrome-Produkt-UI kommen.
+
+- `versionCode` 9 / `versionName` 0.2.6.
+- `release/arena-0.2.6.apk` (175071 B, SHA-256 `958a47f771bdadcd156ff2f129ef468c68bc7a0076c712993197c94f9c72ca3d`).
 
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
@@ -296,7 +318,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.2-b.apk` | + Versionsschild |
 | `release/arena-0.2.3.apk` | Seiten-Zoom 25–300 % |
 | `release/arena-0.2.4.apk` | UA/Overview/kein Extra-JS |
-| `release/arena-0.2.5.apk` | **aktuell** — Start `https://arena.ai/code` |
+| `release/arena-0.2.5.apk` | Start `/code`, Desktop-Crop (nicht nutzen) |
+| `release/arena-0.2.6.apk` | **aktuell** — Viewport/Overview, Menü Anmelden |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |

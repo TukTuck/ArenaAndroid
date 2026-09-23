@@ -68,6 +68,34 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
+    /**
+     * Chrome-Viewport: Breite = Gerät, Scale 1. Ohne das nimmt WebView oft ~980 px
+     * (Desktop) und zeigt bei Overview=off nur einen Crop — Cookies/Hero wirken
+     * 4× zu groß, CSS-Zoom 25 % „rettet“ visuell, ändert innerWidth aber nicht,
+     * deshalb scrollt die Sidebar nicht zum Login.
+     */
+    static final String JS_VIEWPORT =
+            "(function(){try{"
+                    + "var c='width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes';"
+                    + "var list=document.getElementsByName('viewport');"
+                    + "var m=null;"
+                    + "for(var i=0;i<list.length;i++){if(list[i].tagName==='META'){m=list[i];}}"
+                    + "if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');"
+                    + "(document.head||document.documentElement).appendChild(m);}"
+                    + "var cur=m.getAttribute('content')||'';"
+                    + "if(cur.indexOf('device-width')===-1){m.setAttribute('content',c);}"
+                    + "}catch(e){}})();";
+
+    /** Klickt den Login-Knopf der Seite (liegt oft unterhalb der sichtbaren Sidebar). */
+    static final String JS_CLICK_LOGIN =
+            "(function(){try{"
+                    + "var nodes=document.querySelectorAll('a,button,[role=button]');"
+                    + "for(var i=0;i<nodes.length;i++){"
+                    + "var t=(nodes[i].innerText||nodes[i].textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();"
+                    + "if(t==='login'||t==='log in'||t==='sign in'||t==='anmelden'){"
+                    + "nodes[i].click();return 'ok';}}"
+                    + "return 'none';}catch(e){return 'err';}})();";
+
     /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). Einmal pro Dokument. */
     static final String JS_KEEP_BLANK =
             "(function(){try{"
@@ -112,6 +140,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         installCrashRecovery();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        // 0.2.5: Nutzer hat A− auf 25 % gestellt, um den Desktop-Crop zu sehen.
+        // CSS-zoom ändert innerWidth nicht → Sidebar scrollt nicht. Einmal zurück.
+        if (!prefs.getBoolean("zoom_cleared_026", false)) {
+            prefs.edit().putInt("zoom", 100).putBoolean("zoom_cleared_026", true).commit();
+        }
+        zoomTouched = false;
         setContentView(R.layout.activity_main);
 
         toolbar = findViewById(R.id.toolbar);
@@ -227,10 +261,10 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setLoadsImagesAutomatically(true);
         s.setUseWideViewPort(true);
-        // Overview-Mode aus: arena.ai hat eigenes Responsive-Layout. Overview zoomt
-        // lange Chats künstlich und kostet Layout-Zeit – genau das, was der Wrapper
-        // nicht tun soll.
-        s.setLoadWithOverviewMode(false);
+        // Overview AN: ohne Viewport-Meta legt WebView ~980 px Desktop an und zeigt
+        // bei Overview=off nur den Crop (Cookies riesig). Mit device-width (JS_VIEWPORT)
+        // ist die Seite schon bildschirmbreit → Overview-Scale ≈ 1, Chats nicht extra klein.
+        s.setLoadWithOverviewMode(true);
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
@@ -428,6 +462,21 @@ public class MainActivity extends Activity {
             progressBar.setVisibility(View.VISIBLE);
             progressBar.setProgress(progress);
         }
+        if (progress >= 10) {
+            applyMobileViewport();
+        }
+    }
+
+    /** Viewport so früh wie möglich, sonst hydriert die SPA auf Desktop-Breite. */
+    void applyMobileViewport() {
+        if (web == null) {
+            return;
+        }
+        String url = web.getUrl();
+        if (isLocalPage(url)) {
+            return;
+        }
+        web.evaluateJavascript(JS_VIEWPORT, null);
     }
 
     void onPageStartedUi(String url) {
@@ -447,6 +496,7 @@ public class MainActivity extends Activity {
         }
         updateNavState();
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+            applyMobileViewport();
             if (isDarkMode()) {
                 web.evaluateJavascript(JS_DARK, null);
             }
@@ -559,6 +609,8 @@ public class MainActivity extends Activity {
                 int id = item.getItemId();
                 if (id == R.id.menu_reload) {
                     reloadCurrent();
+                } else if (id == R.id.menu_login) {
+                    clickSiteLogin();
                 } else if (id == R.id.menu_browser) {
                     String u = web.getUrl();
                     openExternally(u != null ? u : HOME_URL);
@@ -588,6 +640,27 @@ public class MainActivity extends Activity {
             }
         });
         popup.show();
+    }
+
+    /** Login der Website auslösen – der Knopf sitzt oft unter dem Promo-Block der Sidebar. */
+    private void clickSiteLogin() {
+        if (web == null) {
+            return;
+        }
+        String url = web.getUrl();
+        if (isLocalPage(url)) {
+            Toast.makeText(this, R.string.toast_login_none, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        web.evaluateJavascript(JS_CLICK_LOGIN, new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String value) {
+                if (value == null || value.indexOf("ok") < 0) {
+                    Toast.makeText(MainActivity.this, R.string.toast_login_none,
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void toggleDesktop() {
