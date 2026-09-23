@@ -269,7 +269,7 @@ Cookies bleiben sichtbar — das ist die Website, nicht unser Dialog. Nach Login
 Vergleichstest: dieselbe URL in **Chrome** und in der App (Schild `0.2.7`, Aa blass). Wenn die App anders ist als Chrome, Screenshot beider — dann ist es WebView≠Chrome, nicht unser Zoom.
 
 - `versionCode` 10 / `versionName` 0.2.7.
-- `release/arena-0.2.7.apk` (SHA-256 folgt nach Build).
+- `release/arena-0.2.7.apk` (176590 B, SHA-256 `9e44e4226bbf7aade4732f65eb3bce7f6219f9cf21e6e901e7e7fc0829958f55`).
 
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
