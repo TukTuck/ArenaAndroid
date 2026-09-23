@@ -33,6 +33,14 @@ public class ArenaWebViewClient extends WebViewClient {
     }
 
     @Override
+    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+        if (request == null || request.getUrl() == null) {
+            return false;
+        }
+        return activity.handleUrl(request.getUrl().toString());
+    }
+
+    @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         super.onPageStarted(view, url, favicon);
         activity.onPageStartedUi(url);

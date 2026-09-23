@@ -39,7 +39,7 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.2-b.apk`)
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.4.apk`)
    oder aus dem Chat-Anhang. Die Version steht dauerhaft als Mini-Schild
    in der Werkzeugleiste.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“

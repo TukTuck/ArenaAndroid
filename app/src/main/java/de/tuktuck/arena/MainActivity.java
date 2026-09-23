@@ -36,6 +36,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Arena – schlanker, stabiler WebView-Client für arena.ai.
  * Optimiert für Geräte bis Android 7, läuft ab Android 4.4.
@@ -64,9 +67,11 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
-    /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). */
+    /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). Einmal pro Dokument. */
     static final String JS_KEEP_BLANK =
             "(function(){try{"
+                    + "if(window.__arenaKeepBlank){return;}"
+                    + "window.__arenaKeepBlank=true;"
                     + "document.addEventListener('click',function(e){"
                     + "var t=e.target;while(t&&t.tagName!=='A'){t=t.parentNode;if(!t||t===document){t=null;break;}}"
                     + "if(t&&t.getAttribute('target')==='_blank'){t.setAttribute('target','_self');}"
@@ -96,6 +101,10 @@ public class MainActivity extends Activity {
     private String lastErrorUrl;
     private long lastErrorAt;
     private BroadcastReceiver netReceiver;
+    /** Unveränderte WebView-UA, merken wir uns zum Chrome-ähnlich-Machen. */
+    private String stockUserAgent;
+    /** true, sobald der Nutzer den Zoom vom Default weggedreht hat – dann CSS-zoom setzen/löschen. */
+    private boolean zoomTouched;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,8 +166,6 @@ public class MainActivity extends Activity {
         });
 
         setupWebView();
-        applyPageZoom();
-        applyUserAgent();
         applyLite();
 
         boolean restored = false;
@@ -219,19 +226,32 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setLoadsImagesAutomatically(true);
         s.setUseWideViewPort(true);
-        s.setLoadWithOverviewMode(true);
+        // Overview-Mode aus: arena.ai hat eigenes Responsive-Layout. Overview zoomt
+        // lange Chats künstlich und kostet Layout-Zeit – genau das, was der Wrapper
+        // nicht tun soll.
+        s.setLoadWithOverviewMode(false);
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
         s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-        // TextZoom bleibt 100: A−/A+ skalieren die ganze Seite (CSS zoom), nicht nur die Schrift.
         s.setTextZoom(100);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(true);
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
+        try {
+            s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        } catch (Throwable ignored) {
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            try {
+                s.setOffscreenPreRaster(true);
+            } catch (Throwable ignored) {
+            }
+        }
         if (Build.VERSION.SDK_INT >= 16) {
             s.setAllowFileAccessFromFileURLs(false);
             s.setAllowUniversalAccessFromFileURLs(false);
@@ -241,6 +261,9 @@ public class MainActivity extends Activity {
             CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         }
         CookieManager.getInstance().setAcceptCookie(true);
+        stockUserAgent = s.getUserAgentString();
+        applyUserAgent();
+        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         web.setWebViewClient(new ArenaWebViewClient(this));
         web.setWebChromeClient(new ArenaChromeClient(this));
@@ -446,9 +469,9 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Ganze Seite skalieren (wie Browser-Pinch), nicht nur Schrift.
-     * 100 % = WebView-Normalmaß. System-Schriftgröße (fontScale) wird
-     * herausgerechnet, sonst wirkt 100 % auf Samsung oft schon „draufgezoomt“.
+     * CSS-Zoom nur, wenn der Nutzer A−/A+ benutzt hat.
+     * Bei 100 % und unberührtem Zoom: nichts injizieren – arena.ai soll sein
+     * eigenes Layout ungestört fahren (sonst Relayout bei jedem pageFinished).
      */
     private void applyPageZoom() {
         if (web == null) {
@@ -460,6 +483,9 @@ public class MainActivity extends Activity {
             return;
         }
         int user = currentZoom();
+        if (!zoomTouched && user == 100) {
+            return;
+        }
         float fontScale = 1f;
         try {
             fontScale = getResources().getConfiguration().fontScale;
@@ -475,15 +501,19 @@ public class MainActivity extends Activity {
         if (effective > ZOOM_MAX) {
             effective = ZOOM_MAX;
         }
-        String js = "(function(){try{"
-                + "var z=" + effective + "/100;"
-                + "var d=document.documentElement;"
-                + "d.style.zoom=z;"
-                + "}catch(e){}})();";
+        String js;
+        if (effective == 100) {
+            js = "(function(){try{document.documentElement.style.zoom='';}catch(e){}})();";
+        } else {
+            js = "(function(){try{"
+                    + "document.documentElement.style.zoom=" + effective + "/100;"
+                    + "}catch(e){}})();";
+        }
         web.evaluateJavascript(js, null);
     }
 
     private void changeZoom(int delta) {
+        zoomTouched = true;
         int cur = currentZoom() + delta;
         if (cur < ZOOM_MIN) {
             cur = ZOOM_MIN;
@@ -523,7 +553,9 @@ public class MainActivity extends Activity {
                     toggleLite();
                 } else if (id == R.id.menu_zoom_reset) {
                     prefs.edit().putInt("zoom", 100).commit();
+                    zoomTouched = true;
                     applyPageZoom();
+                    zoomTouched = false;
                     Toast.makeText(MainActivity.this, getString(R.string.toast_zoom, 100),
                             Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.menu_clear) {
@@ -584,13 +616,32 @@ public class MainActivity extends Activity {
         web.getSettings().setLoadsImagesAutomatically(!lite);
     }
 
+    /**
+     * Chrome-ähnliche UA: `; wv` und `Version/4.0` entfernen.
+     * Viele SPAs (inkl. arena.ai) erkennen WebView und schalten auf langsamere
+     * oder kaputte Pfade. Desktop: echte Chrome-Version der WebView, nicht Chrome/60.
+     */
     private void applyUserAgent() {
+        String stock = stockUserAgent;
+        if (stock == null || stock.length() == 0) {
+            stock = web.getSettings().getUserAgentString();
+            stockUserAgent = stock;
+        }
+        if (stock == null) {
+            stock = "";
+        }
         if (isDesktop()) {
+            String ver = "120.0.0.0";
+            Matcher m = Pattern.compile("Chrome/([0-9.]+)").matcher(stock);
+            if (m.find()) {
+                ver = m.group(1);
+            }
             web.getSettings().setUserAgentString(
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                            + "(KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/"
+                            + ver + " Safari/537.36");
         } else {
-            web.getSettings().setUserAgentString(null);
+            String ua = stock.replace("; wv", "").replace(" Version/4.0", "");
+            web.getSettings().setUserAgentString(ua);
         }
     }
 
@@ -640,6 +691,7 @@ public class MainActivity extends Activity {
                 CookieSyncManager.getInstance().sync();
             }
             prefs.edit().remove("zoom").remove("dark").remove("desktop").remove("lite").commit();
+            zoomTouched = false;
             web.getSettings().setTextZoom(100);
             applyUserAgent();
             applyLite();
@@ -901,6 +953,10 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) {
             web.onResume();
+            try {
+                web.resumeTimers();
+            } catch (Throwable ignored) {
+            }
         }
         ensureNetReceiver();
         registerReceiver(netReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));

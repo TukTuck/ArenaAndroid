@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.3** (`versionCode` 6) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.4** (`versionCode` 7) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -187,7 +187,31 @@ Root-Cause-Analyse im Code – **drei echte Bugs**, alle in der Hülle:
 **Was nicht geändert wurde:** Pinch-Zoom der WebView bleibt an (`setSupportZoom`).
 
 - `versionCode` 6 / `versionName` 0.2.3.
-- `release/arena-0.2.3.apk` (SHA-256 folgt nach Build), gleiche Signatur wie 0.2.1–0.2.2-b.
+- `release/arena-0.2.3.apk` (SHA-256 `8c66c13c6bb8c3c5ace813000161490cb473c70e7b6e0523942f5fe08013f00a`), gleiche Signatur wie 0.2.1–0.2.2-b.
+
+### 0.2.4 (2026-09-23) — Wrapper aus dem Weg, Stabilität/Tempo
+**Auftrag (Original, sinngemäß):** Weg vom Zoom-Thema. Zoom darf bleiben. arena.ai hat selbst ein funktionierendes browserbasiertes Layout. Der Wrapper existiert, weil die Seite **unstabil** ist und ein Chat **teilweise 10 Minuten** braucht – nicht wegen Gerät oder Internet.
+
+**Produktentscheidung P10:** Die Hülle gestaltet die Seite nicht um. Sie soll sie **nicht abstürzen lassen und nicht ausbremsen**. A−/A+ bleiben optional.
+
+**Was in der Hülle 10-Minuten-Loads und Hänger begünstigt hat:**
+1. **User-Agent mit `; wv` / `Version/4.0`:** SPAs erkennen WebView und gehen oft in langsamere oder defekte Codepfade. Desktop-UA war fest **Chrome/60** (2017) – Feature-Detection kann endlos polyfillen.
+2. **`setLoadWithOverviewMode(true)`:** WebView zoomt lange Dokumente (Chats!) künstlich auf Bildschirmbreite. arena.ai hat eigenes Responsive. Overview = Extra-Layout auf jeder Nachricht.
+3. **CSS-`zoom` + Click-Listener bei jedem `onPageFinished`:** Relayout und gestapelte Listener, obwohl der Nutzer Zoom nie angefasst hat.
+
+**Fix:**
+- Mobile-UA: `; wv` und `Version/4.0` entfernen, Chrome-Version der **echten** WebView behalten.
+- Desktop-UA: dieselbe Chrome-Version auf Linux-Desktop-UA, nicht mehr Chrome/60.
+- Overview-Mode **aus**.
+- CSS-Zoom nur noch nach A−/A+ (`zoomTouched`); Default 100 % = kein JS.
+- `JS_KEEP_BLANK` einmal pro Dokument (`window.__arenaKeepBlank`).
+- Cache `LOAD_DEFAULT`, Hardware-Layer, `RenderPriority.HIGH`, `resumeTimers` in `onResume`.
+- `shouldOverrideUrlLoading(WebResourceRequest)` für API 24+ (S8).
+
+- `versionCode` 7 / `versionName` 0.2.4.
+- `release/arena-0.2.4.apk` (SHA-256 folgt nach Build).
+
+**Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
 ---
 
@@ -248,7 +272,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.1.apk` | Zoom-Regression (nicht nutzen) |
 | `release/arena-0.2.2.apk` | Schriftzoom-Fix |
 | `release/arena-0.2.2-b.apk` | + Versionsschild |
-| `release/arena-0.2.3.apk` | **aktuell** — Seiten-Zoom 25–300 % |
+| `release/arena-0.2.3.apk` | Seiten-Zoom 25–300 % |
+| `release/arena-0.2.4.apk` | **aktuell** — UA/Overview/kein Extra-JS, Tempo |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -280,7 +305,7 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtests** auf S8 (Android 7) und XCover 5 (Android 14) — Zoom 0.2.2 / Schild 0.2.2-b prüfen.
+1. **Feldtest 0.2.4:** Chat öffnen, Zeit stoppen. Schild `0.2.4`. Bei ewigem Laden: Android-System-WebView im Play Store aktualisieren.
 2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
 3. Nächste App-Version laut Auftrag: **0.2.3** (Inhalt noch offen).
 4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
