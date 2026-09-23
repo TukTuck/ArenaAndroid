@@ -39,8 +39,8 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: entweder aus dem GitHub-Release **v0.1.0**, direkt aus diesem
-   Repo (`release/arena-0.1.0.apk`) oder aus dem Chat-Anhang.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.2.apk`)
+   oder aus dem Chat-Anhang.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“
    für den Browser/die Dateiverwaltung erlauben.
 3. Fertig. Wer möchte, kann beim ersten Start den Launcher-Dialog nutzen, um

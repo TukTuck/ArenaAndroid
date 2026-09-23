@@ -62,13 +62,6 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
-    static final String JS_VIEWPORT_FIX =
-            "(function(){try{"
-                    + "var m=document.querySelector('meta[name=viewport]');"
-                    + "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}"
-                    + "m.content='width=device-width, initial-scale=1, minimum-scale=0.25, maximum-scale=5, user-scalable=yes';"
-                    + "}catch(e){}})();";
-
     /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). */
     static final String JS_KEEP_BLANK =
             "(function(){try{"
@@ -159,12 +152,7 @@ public class MainActivity extends Activity {
         });
 
         setupWebView();
-        int savedZoom = prefs.getInt("zoom", 100);
-        if (savedZoom < 75) {
-            savedZoom = 100;
-            prefs.edit().putInt("zoom", 100).commit();
-        }
-        web.getSettings().setTextZoom(savedZoom);
+        applyTextZoom();
         applyUserAgent();
         applyLite();
 
@@ -230,10 +218,8 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        if (Build.VERSION.SDK_INT >= 19) {
-            s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
-        }
-        web.setInitialScale(0);
+        // NORMAL: TEXT_AUTOSIZING überschreibt setTextZoom – A−/A+ wirkten dann nicht.
+        s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
         s.setAllowFileAccess(false);
@@ -412,6 +398,7 @@ public class MainActivity extends Activity {
             addJsBridge();
         }
         updateNavState();
+        applyTextZoom();
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
             if (isDarkMode()) {
                 web.evaluateJavascript(JS_DARK, null);
@@ -441,16 +428,35 @@ public class MainActivity extends Activity {
         btnForward.setAlpha(canFwd ? 1f : 0.3f);
     }
 
+    private int currentZoom() {
+        int z = prefs.getInt("zoom", 100);
+        if (z < ZOOM_MIN) {
+            z = ZOOM_MIN;
+        }
+        if (z > ZOOM_MAX) {
+            z = ZOOM_MAX;
+        }
+        return z;
+    }
+
+    /** Schriftgröße über setTextZoom – der einzige Weg, der A−/A+ sichtbar macht. */
+    private void applyTextZoom() {
+        if (web == null) {
+            return;
+        }
+        web.getSettings().setTextZoom(currentZoom());
+    }
+
     private void changeZoom(int delta) {
-        int cur = web.getSettings().getTextZoom() + delta;
+        int cur = currentZoom() + delta;
         if (cur < ZOOM_MIN) {
             cur = ZOOM_MIN;
         }
         if (cur > ZOOM_MAX) {
             cur = ZOOM_MAX;
         }
-        web.getSettings().setTextZoom(cur);
         prefs.edit().putInt("zoom", cur).commit();
+        applyTextZoom();
         Toast.makeText(this, getString(R.string.toast_zoom, cur), Toast.LENGTH_SHORT).show();
     }
 
@@ -480,8 +486,10 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.menu_lite) {
                     toggleLite();
                 } else if (id == R.id.menu_zoom_reset) {
-                    web.getSettings().setTextZoom(100);
                     prefs.edit().putInt("zoom", 100).commit();
+                    applyTextZoom();
+                    Toast.makeText(MainActivity.this, getString(R.string.toast_zoom, 100),
+                            Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.menu_clear) {
                     confirmClear();
                 } else if (id == R.id.menu_about) {
