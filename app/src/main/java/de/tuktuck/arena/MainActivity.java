@@ -62,6 +62,13 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
+    static final String JS_VIEWPORT_FIX =
+            "(function(){try{"
+                    + "var m=document.querySelector('meta[name=viewport]');"
+                    + "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}"
+                    + "m.content='width=device-width, initial-scale=1, minimum-scale=0.25, maximum-scale=5, user-scalable=yes';"
+                    + "}catch(e){}})();";
+
     /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). */
     static final String JS_KEEP_BLANK =
             "(function(){try{"
@@ -152,7 +159,12 @@ public class MainActivity extends Activity {
         });
 
         setupWebView();
-        web.getSettings().setTextZoom(prefs.getInt("zoom", 100));
+        int savedZoom = prefs.getInt("zoom", 100);
+        if (savedZoom < 75) {
+            savedZoom = 100;
+            prefs.edit().putInt("zoom", 100).commit();
+        }
+        web.getSettings().setTextZoom(savedZoom);
         applyUserAgent();
         applyLite();
 
@@ -218,6 +230,10 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
+        if (Build.VERSION.SDK_INT >= 19) {
+            s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+        }
+        web.setInitialScale(0);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
         s.setAllowFileAccess(false);
