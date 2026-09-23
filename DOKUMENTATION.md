@@ -1,9 +1,11 @@
 # DOKUMENTATION — Arena für Android
 
-**Projekt:** Arena für Android 0.2.0 · stabiler, zugänglicher WebView-Client für arena.ai
-**Erstellt:** 2026-09-21 · vollständig in einer Arena.ai-Coding-Session
+**Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
+**Aktueller Stand:** **0.2.2-b** (`versionCode` 5) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
+**Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
-**Repo:** TukTuck/ArenaAndroid · Stand: Branch `arena/01a0c539-arenaandroid` (lokal) / `main` (gemergt via PR #1, Commit `fefbe97`)
+**Repo:** TukTuck/ArenaAndroid
 
 ---
 
@@ -74,9 +76,13 @@ Der Befund wurde zuerst als Liste ausgewiesen (genau wie gewünscht), dann wurde
 | Popups (OAuth-Login) im selben Fenster | sonst scheitert die Anmeldung im Wrapper |
 | SSL fail-closed | Sicherheit schlägt Bequemlichkeit |
 | Fehlerseite mit Adresse+Code klein | Nutzer kann exakt Fehler melden, ohne Debugger |
+| Mini-Versionsschild in der Werkzeugleiste (ab 0.2.2-b) | Sideload-Tester erkennt die installierte APK ohne Menü/Reload |
 
 ### P8 — UI-Sprache Deutsch, Layout werkzeugleisten-artig
-**Warum:** Zielgruppe ist deutschsprachig; eine Toolbar aus Zurück/Vorwärts/Neuladen/A−/A+/Menü ist auf alten Samsungs sofort verständlich.
+**Warum:** Zielgruppe ist deutschsprachig; eine Toolbar aus Zurück/Vorwärts/Neuladen/**Versionsschild**/A−/A+/Menü ist auf alten Samsungs sofort verständlich.
+
+### P9 — Jede lieferbare Version enthält eine signierte APK in `release/`
+**Warum (Auftrag 2026-09-23):** „bitte die apk auch immer miterstellen, nicht nur eine skript anleitung“ — Sideload-Tests gehen sonst nur über Selbstbauen. Build-Kette bleibt `build.sh`; das Artefakt liegt als `release/arena-<versionName>.apk` im Repo.
 
 ---
 
@@ -111,6 +117,50 @@ Root-Cause-Analyse im Code – **drei echte Bugs**, alle in der Hülle:
 2. Keine Fehlerkaskaden (nur Hauptdokument-Fehler sind Fehler).
 3. Keine Absturzdialog-Schleifen (still wiederherstellen).
 4. Fehlerseiten mit Diagnose (Adresse + Code + Version).
+
+### 0.2.1 (2026-09-23, Session `01a0cd80`) — Viewport-/Zoom-Versuch, **Regression**
+**Auftrag:** Nachzug des lokalen Patches der vorigen Session (Doku + PROMPT-PC + Zoom-Heuristik), plus immer eine APK mitliefern.
+
+**Was geändert wurde:**
+- `JS_VIEWPORT_FIX` (Viewport-Meta) — im Endstand **ungenutzt** (nicht in `onPageFinished` aufgerufen).
+- `WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING` + `setInitialScale(0)`.
+- Beim Start: gespeicherter Zoom **&lt; 75 %** wurde zwangsweise auf 100 % gesetzt.
+- `versionCode` 3 / `versionName` 0.2.1.
+- `DOKUMENTATION.md` + `PROMPT-PC.md` nach Git.
+- `release/arena-0.2.1.apk` (SHA-256 `572f4475c2631ed9701a4301f5daee0724a4ad59694ff41d46ce4bce850a9144`). Neuer Debug-Schlüssel, weil der 0.2.0-Key nicht im Git lag.
+
+**Warum TEXT_AUTOSIZING:** Annahme, arena.ai sei auf alter WebView unleserlich / Layout kollabiere — Autosizing sollte Schrift „von allein“ lesbar machen.
+
+**BUG 4 — Zoom tot.** Nutzerbericht: „ok jetzt funktioniert der zoom ganicht mehr“.
+*Was:* A−/A+ rufen `WebSettings.setTextZoom()` auf. `TEXT_AUTOSIZING` berechnet Schriftgrößen selbst und **ignoriert** `setTextZoom` (bekanntes WebView-Verhalten). Zusätzlich machte der 75 %-Reset kleine Zoom-Stufen beim nächsten Start rückgängig.
+*Folge:* Toast konnte noch „Schriftgröße: x %“ zeigen, die Seite änderte sich nicht.
+*Lehre:* Schriftgröße nur über `setTextZoom` + `LayoutAlgorithm.NORMAL`. TEXT_AUTOSIZING und setTextZoom schließen sich aus.
+
+### 0.2.2 (2026-09-23) — Zoom wiederhergestellt
+**Was:**
+- `TEXT_AUTOSIZING` und `setInitialScale(0)` entfernt, Layout `NORMAL`.
+- 75 %-Zwangsreset entfernt (50–300 % bleiben gespeichert).
+- `applyTextZoom()` nach jedem `onPageFinished` (manche WebViews setzen Zoom bei Navigation zurück).
+- Zoom-Reset im Menü mit Toast.
+- `versionCode` 4 / `versionName` 0.2.2.
+- `release/arena-0.2.2.apk` (SHA-256 `b23ae4a4a976895eb557e1f6e8bca2901ed0d1c239d5a51abfa8cfb082a68b99`), **gleiche Signatur wie 0.2.1** (Update ohne Deinstallation, sofern 0.2.1 aus dieser Session).
+
+**Warum nicht 0.2.3:** Auftrag: erst den Zoom-Schaden von 0.2.1 beheben, Versionsschild kommt als Patch-Letter.
+
+### 0.2.2-b (2026-09-23) — Mini-Versionsschild in der Werkzeugleiste
+**Auftrag (Original):** „bitte füge oben in unsere app leiste ein mini versions nummern schild ein. ich erkenne sonst nicht welche version geladen ist ohne neu zu laden, was genau wurde gemacht, und warum? mit in die doku, es muss alles hart genau mitgeloggt werden“ · Nachtrag: „das wird dann nur die 0.2.2.-b und danach gehen wir weiter mit 0.2.3“
+
+**Was:**
+- `TextView` `lbl_version` in `activity_main.xml`, zwischen Spacer und A−/A+, 10 sp, abgerundetes Schild (`version_badge_bg`).
+- Text = `PackageInfo.versionName` zur Laufzeit (nie hardcodiert) — zeigt also genau die **installierte** APK.
+- Tippen öffnet denselben „Über“-Dialog wie das Menü.
+- TalkBack: `cd_version` / „App-Version“.
+- `versionCode` 5 / `versionName` `0.2.2-b`.
+- `release/arena-0.2.2-b.apk`, gleiche Signatur wie 0.2.1/0.2.2.
+
+**Warum ein sichtbares Schild statt nur „Über“:** Beim Sideloaden mehrerer APKs hintereinander (0.2.0 / 0.2.1 / 0.2.2) war ohne Reload/Menü nicht erkennbar, welche Binary wirklich läuft. Das Schild ist der Test-Kanal.
+
+**Nächste Versionsnummer laut Auftrag:** 0.2.3 (noch nicht begonnen).
 
 ---
 
@@ -199,13 +249,15 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtests** auf S8 (Android 7) und XCover 5 (Android 14) stehen aus; Rückmeldekanal ist die Diagnosezeile der Fehlerseite.
-2. `PROMPT-PC.md`, dieses Dokument und der lokale Commit sind (Stand dieser Session) **nicht** auf GitHub – neue Session → pushen.
-3. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment für noch schnelleres Starten, geprüfter Auto-Updater.
-4. PC-Ableger **ArenaPC** ist als Wahnsinnsprompt vollständig spezifiziert (`PROMPT-PC.md`).
+1. **Feldtests** auf S8 (Android 7) und XCover 5 (Android 14) — Zoom 0.2.2 / Schild 0.2.2-b prüfen.
+2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
+3. Nächste App-Version laut Auftrag: **0.2.3** (Inhalt noch offen).
+4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
+5. PC-Ableger **ArenaPC** (`PROMPT-PC.md`) — bewusst zurückgestellt, erst die Android-App.
 
 ---
 
 ## 10. Epilog — was diese Session zeigt
 
 Ausgehend von einem Zweizeiler („App für max Android 7…") entstanden in **einer** Session: eine lauffähige, signierte Android-App (166 KB) für zwei reale Gerätegenerationen, eine vollständig dokumentierte Ersatz-Buildkette aus JRE, Fremd-Compiler, Forschungs-Archiv-Soot und Browser-Signierbibliothek, eine ehrliche Fehlerchronik inklusive der drei eigenen Bugs und ihrer Behebung – und ein fertiges Lastenheft (in Promptform) für den PC-Ableger. **Das ist Arena.**
+gs-Archiv-Soot und Browser-Signierbibliothek, eine ehrliche Fehlerchronik inklusive der drei eigenen Bugs und ihrer Behebung – und ein fertiges Lastenheft (in Promptform) für den PC-Ableger. **Das ist Arena.**

@@ -9,6 +9,7 @@
     <string name="cd_zoom_out">Schrift kleiner</string>
     <string name="cd_zoom_in">Schrift größer</string>
     <string name="cd_menu">Menü</string>
+    <string name="cd_version">App-Version</string>
 
     <string name="menu_reload">Neu laden</string>
     <string name="menu_browser">Im Browser öffnen</string>

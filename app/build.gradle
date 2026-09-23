@@ -16,8 +16,8 @@ android {
         // targetSdk 28 vermeidet moderne Zwänge (Background-Limits, Scoped Storage),
         // ohne auf alten Geräten Nachteile zu haben.
         targetSdk 28
-        versionCode 4
-        versionName '0.2.2'
+        versionCode 5
+        versionName '0.2.2-b'
     }
 
     signingConfigs {

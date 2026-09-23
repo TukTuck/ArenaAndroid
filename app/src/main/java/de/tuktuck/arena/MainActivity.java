@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
     private TextView btnZoomOut;
     private TextView btnZoomIn;
     private TextView btnMenu;
+    private TextView lblVersion;
     private View toolbar;
     private SharedPreferences prefs;
 
@@ -109,6 +110,8 @@ public class MainActivity extends Activity {
         btnZoomOut = (TextView) findViewById(R.id.btn_zoom_out);
         btnZoomIn = (TextView) findViewById(R.id.btn_zoom_in);
         btnMenu = (TextView) findViewById(R.id.btn_menu);
+        lblVersion = (TextView) findViewById(R.id.lbl_version);
+        bindVersionBadge();
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -612,16 +615,29 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void showAbout() {
-        String version = "?";
+    /** Installierte versionName aus dem APK-Manifest – nie hardcodiert. */
+    private String installedVersionName() {
         try {
             PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
-            version = pi.versionName;
+            if (pi != null && pi.versionName != null && pi.versionName.length() > 0) {
+                return pi.versionName;
+            }
         } catch (Throwable ignored) {
         }
+        return "?";
+    }
+
+    private void bindVersionBadge() {
+        if (lblVersion == null) {
+            return;
+        }
+        lblVersion.setText(installedVersionName());
+    }
+
+    private void showAbout() {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.app_name)
-                .setMessage(getString(R.string.about_text, version))
+                .setMessage(getString(R.string.about_text, installedVersionName()))
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
