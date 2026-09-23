@@ -31,6 +31,8 @@ fi
 
 VERSION=$(grep -oP "versionName '\K[^']+" app/build.gradle)
 VC=$(grep -oP "versionCode \K[0-9]+" app/build.gradle)
+MIN_SDK=$(grep -oP "minSdk \K[0-9]+" app/build.gradle)
+TARGET_SDK=$(grep -oP "targetSdk \K[0-9]+" app/build.gradle)
 OUT=build
 rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex" "$OUT/keys"
@@ -44,6 +46,7 @@ echo "== 2/6 Ressourcen (aapt2) =="
 "$AAPT2" compile --dir app/src/main/res -o "$OUT/res.zip"
 "$AAPT2" link -o "$OUT/app-unsigned.apk" -I "$ANDROID_JAR" \
   --manifest "$OUT/AndroidManifest.xml" -R "$OUT/res.zip" --auto-add-overlay \
+  --min-sdk-version "$MIN_SDK" --target-sdk-version "$TARGET_SDK" \
   -A app/src/main/assets --java "$OUT/gen"
 
 echo "== 3/6 Java kompilieren =="

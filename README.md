@@ -39,8 +39,10 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.7.apk`)
-   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.7` zeigen.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.8.apk`)
+   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.8` zeigen.
+   **0.2.7 und älter:** auf Android 14 (XCover 5) „nicht kompatibel“, weil
+   `uses-sdk` im APK fehlte. 0.2.8 hat minSdk 19 / targetSdk 28.
    Startet auf **https://arena.ai/code**. Zoom-Leiste Standard **aus** (Aa blass) —
    Anzeige wie Chrome, ohne Größen-Vorgabe. Aa schaltet A−/A+ ein.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“

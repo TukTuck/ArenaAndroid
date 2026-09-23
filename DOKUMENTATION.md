@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.7** (`versionCode` 10) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.8** (`versionCode` 11) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -271,6 +271,18 @@ Vergleichstest: dieselbe URL in **Chrome** und in der App (Schild `0.2.7`, Aa bl
 - `versionCode` 10 / `versionName` 0.2.7.
 - `release/arena-0.2.7.apk` (176590 B, SHA-256 `9e44e4226bbf7aade4732f65eb3bce7f6219f9cf21e6e901e7e7fc0829958f55`).
 
+### 0.2.8 (2026-09-24) — uses-sdk, sonst XCover 5 „nicht kompatibel“
+**Beleg:** Nutzer: 0.2.7 geht auf dem Emulator, auf dem **XCover 5 (Android 14)** „Handy-App nicht kompatibel“.
+
+**BUG 7 — `uses-sdk` fehlte im APK.** `build.gradle` hatte minSdk 19 / targetSdk 28, `build.sh` schrieb das **nicht** ins Manifest. Binär-Manifest ohne `minSdkVersion`/`targetSdkVersion` → PackageManager nimmt targetSdk **1**. Android 14 installiert keine Apps mit targetSdk &lt; 23. Der Emulator war nachsichtiger.
+
+P4 in der Doku („targetSdk 28, weil Android 14 &lt; 23 blockt“) war die richtige Regel — sie kam nur nie in der APK an.
+
+**Fix:** `<uses-sdk min=19 target=28>` im Manifest + `aapt2 link --min-sdk-version/--target-sdk-version` aus `build.gradle`.
+
+- `versionCode` 11 / `versionName` 0.2.8.
+- `release/arena-0.2.8.apk` (169469 B, SHA-256 `5f63f5f384a877af8cb92a24ae36fcb0d660490b3646f531b85ce81a56596edc`). `aapt2 dump badging`: `sdkVersion:'19'` `targetSdkVersion:'28'`.
+
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
 ---
@@ -336,7 +348,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.4.apk` | UA/Overview/kein Extra-JS |
 | `release/arena-0.2.5.apk` | Start `/code`, Desktop-Crop (nicht nutzen) |
 | `release/arena-0.2.6.apk` | Viewport-Inject (nicht Default) |
-| `release/arena-0.2.7.apk` | **aktuell** — Zoom-Leiste aus, wie Chrome |
+| `release/arena-0.2.7.apk` | Zoom-Leiste aus; **kein uses-sdk** (X5 blockt) |
+| `release/arena-0.2.8.apk` | **aktuell** — minSdk 19 / targetSdk 28 im APK |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -368,7 +381,7 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtest 0.2.7:** Schild `0.2.7`, **Aa blass**, keine A−/A+. Vergleich mit Chrome dieselbe URL. Bei Bedarf Aa antippen.
+1. **Feldtest 0.2.8 auf XCover 5:** Sideload muss durchgehen. Schild `0.2.8`. Dann Layout vs Chrome (0.2.7-Emulator: App Crop, Chrome/WebView-Tester OK).
 2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
 3. Zoom nur noch hinter dem Aa-Schalter.
 4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
