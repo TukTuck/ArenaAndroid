@@ -48,8 +48,10 @@ public class MainActivity extends Activity {
     private static final String JS_BRIDGE = "ArenaApp";
     private static final String LOCAL_PREFIX = "file:///android_asset/";
     private static final int REQ_FILE = 2001;
-    private static final int ZOOM_MIN = 50;
+    /** Seiten-Zoom (CSS zoom), nicht Schriftzoom. 100 = WebView-Normalmaß, nicht „kein Zoom“. 0 % gäbe es nicht – die Seite wäre unsichtbar. */
+    private static final int ZOOM_MIN = 25;
     private static final int ZOOM_MAX = 300;
+    private static final int ZOOM_STEP = 25;
     private static final long ERROR_DEDUP_MS = 2500;
 
     /** Dunkler Modus für die Webseite (invertierter Filter, bewusst einfach gehalten). */
@@ -138,13 +140,13 @@ public class MainActivity extends Activity {
         btnZoomOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                changeZoom(-25);
+                changeZoom(-ZOOM_STEP);
             }
         });
         btnZoomIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                changeZoom(25);
+                changeZoom(ZOOM_STEP);
             }
         });
         btnMenu.setOnClickListener(new View.OnClickListener() {
@@ -155,7 +157,7 @@ public class MainActivity extends Activity {
         });
 
         setupWebView();
-        applyTextZoom();
+        applyPageZoom();
         applyUserAgent();
         applyLite();
 
@@ -221,8 +223,9 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        // NORMAL: TEXT_AUTOSIZING überschreibt setTextZoom – A−/A+ wirkten dann nicht.
         s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+        // TextZoom bleibt 100: A−/A+ skalieren die ganze Seite (CSS zoom), nicht nur die Schrift.
+        s.setTextZoom(100);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
         s.setAllowFileAccess(false);
@@ -401,12 +404,12 @@ public class MainActivity extends Activity {
             addJsBridge();
         }
         updateNavState();
-        applyTextZoom();
         if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
             if (isDarkMode()) {
                 web.evaluateJavascript(JS_DARK, null);
             }
             web.evaluateJavascript(JS_KEEP_BLANK, null);
+            applyPageZoom();
         }
     }
 
@@ -442,12 +445,42 @@ public class MainActivity extends Activity {
         return z;
     }
 
-    /** Schriftgröße über setTextZoom – der einzige Weg, der A−/A+ sichtbar macht. */
-    private void applyTextZoom() {
+    /**
+     * Ganze Seite skalieren (wie Browser-Pinch), nicht nur Schrift.
+     * 100 % = WebView-Normalmaß. System-Schriftgröße (fontScale) wird
+     * herausgerechnet, sonst wirkt 100 % auf Samsung oft schon „draufgezoomt“.
+     */
+    private void applyPageZoom() {
         if (web == null) {
             return;
         }
-        web.getSettings().setTextZoom(currentZoom());
+        web.getSettings().setTextZoom(100);
+        String url = web.getUrl();
+        if (isLocalPage(url)) {
+            return;
+        }
+        int user = currentZoom();
+        float fontScale = 1f;
+        try {
+            fontScale = getResources().getConfiguration().fontScale;
+        } catch (Throwable ignored) {
+        }
+        if (fontScale < 0.5f || fontScale > 3f) {
+            fontScale = 1f;
+        }
+        int effective = Math.round(user / fontScale);
+        if (effective < 10) {
+            effective = 10;
+        }
+        if (effective > ZOOM_MAX) {
+            effective = ZOOM_MAX;
+        }
+        String js = "(function(){try{"
+                + "var z=" + effective + "/100;"
+                + "var d=document.documentElement;"
+                + "d.style.zoom=z;"
+                + "}catch(e){}})();";
+        web.evaluateJavascript(js, null);
     }
 
     private void changeZoom(int delta) {
@@ -459,7 +492,7 @@ public class MainActivity extends Activity {
             cur = ZOOM_MAX;
         }
         prefs.edit().putInt("zoom", cur).commit();
-        applyTextZoom();
+        applyPageZoom();
         Toast.makeText(this, getString(R.string.toast_zoom, cur), Toast.LENGTH_SHORT).show();
     }
 
@@ -490,7 +523,7 @@ public class MainActivity extends Activity {
                     toggleLite();
                 } else if (id == R.id.menu_zoom_reset) {
                     prefs.edit().putInt("zoom", 100).commit();
-                    applyTextZoom();
+                    applyPageZoom();
                     Toast.makeText(MainActivity.this, getString(R.string.toast_zoom, 100),
                             Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.menu_clear) {
@@ -610,6 +643,7 @@ public class MainActivity extends Activity {
             web.getSettings().setTextZoom(100);
             applyUserAgent();
             applyLite();
+            applyPageZoom();
             loadMain(HOME_URL);
         } catch (Throwable ignored) {
         }

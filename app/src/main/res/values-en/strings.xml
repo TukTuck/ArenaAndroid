@@ -5,8 +5,8 @@
     <string name="cd_back">Back</string>
     <string name="cd_forward">Forward</string>
     <string name="cd_reload">Reload</string>
-    <string name="cd_zoom_out">Smaller text</string>
-    <string name="cd_zoom_in">Larger text</string>
+    <string name="cd_zoom_out">Zoom out</string>
+    <string name="cd_zoom_in">Zoom in</string>
     <string name="cd_menu">Menu</string>
     <string name="cd_version">App version</string>
 
@@ -16,7 +16,7 @@
     <string name="menu_desktop">Desktop site</string>
     <string name="menu_dark">Dark mode</string>
     <string name="menu_lite">Data saver (no images)</string>
-    <string name="menu_zoom_reset">Reset text size</string>
+    <string name="menu_zoom_reset">Reset zoom (100 %)</string>
     <string name="menu_clear">Reset (cache &amp; login)</string>
     <string name="menu_about">About</string>
 
@@ -29,7 +29,7 @@
     <string name="open_browser">Open in browser</string>
     <string name="pick_file">Choose file</string>
 
-    <string name="toast_zoom">Text size: %1$d %%</string>
+    <string name="toast_zoom">Zoom: %1$d %%</string>
     <string name="toast_no_app">No matching app found</string>
     <string name="toast_download">Download started</string>
     <string name="toast_download_error">Download not possible</string>

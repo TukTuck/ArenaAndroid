@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.2-b** (`versionCode` 5) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.3** (`versionCode` 6) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -67,7 +67,7 @@ Der Befund wurde zuerst als Liste ausgewiesen (genau wie gewünscht), dann wurde
 |---|---|
 | Auto-Reload + Crash-Recovery ohne Dialog-Serie | „alles ist ständig kollabiert und aufgehangen" |
 | Offline-/Fehlerseite mit Riesen-Taste | „Fehlermeldung nach der anderen" statt weißem Bildschirm |
-| Schriftgröße 50–300 % per Taste, persistiert | alte Augen, hohes DPI, kleines Display |
+| Seiten-Zoom A−/A+ 25–300 % (ab 0.2.3, CSS zoom) | 100 % = Normalmaß; A− verkleinert die **ganze** Seite, nicht nur Schrift |
 | 48-dp-Tasten, TalkBack-Labels | „zugänglich" wörtlich genommen |
 | Sparmodus (Bilder aus) | S8-RAM schonen, falls die Seite selbst zu schwer ist |
 | Desktop-UA-Umschalter | mobile Seitenvarianten sind manchmal die kaputten Varianten |
@@ -156,11 +156,38 @@ Root-Cause-Analyse im Code – **drei echte Bugs**, alle in der Hülle:
 - Tippen öffnet denselben „Über“-Dialog wie das Menü.
 - TalkBack: `cd_version` / „App-Version“.
 - `versionCode` 5 / `versionName` `0.2.2-b`.
-- `release/arena-0.2.2-b.apk`, gleiche Signatur wie 0.2.1/0.2.2.
+- `release/arena-0.2.2-b.apk` (SHA-256 `a678d574b2d9ba56dea505e9096eaf6ccb9b5fc1c1ee05a5f300bf5293107aaf`), gleiche Signatur wie 0.2.1/0.2.2.
 
 **Warum ein sichtbares Schild statt nur „Über“:** Beim Sideloaden mehrerer APKs hintereinander (0.2.0 / 0.2.1 / 0.2.2) war ohne Reload/Menü nicht erkennbar, welche Binary wirklich läuft. Das Schild ist der Test-Kanal.
 
-**Nächste Versionsnummer laut Auftrag:** 0.2.3 (noch nicht begonnen).
+**Nächste Versionsnummer laut Auftrag:** 0.2.3.
+
+### 0.2.3 (2026-09-23) — Seiten-Zoom statt Schriftzoom
+**Auftrag (Original):** „okay zoom funktioniert wieder, aber halt immernoch alles viel zu groß, warum gibt es die funktion überhaupt? im android browser hat man das doch auch nicht zwingend. und wie kann es sein das bei einem zoomstufe von 100% alles vviiiiiiieeeeel zu gezomt ist, das sollte doch sozusagen 0 sein, wenn man schon nichtmal bis zur null runter schrauben kann?“
+
+**Warum A−/A+ überhaupt existieren:** Ursprung 0.1.0/P7 — Barrierefreiheit (große Schrift auf S8). Der Android-Browser hat Pinch-Zoom, keine extra A−/A+-Leiste; die Tasten sind die Tastatur-/TalkBack-taugliche Entsprechung. Behalten, aber **umgebaut**, weil sie das eigentliche Problem (alles zu groß) nicht lösen konnten.
+
+**Warum 100 % nicht „0 / ungezomt“ war:**
+- `WebSettings.setTextZoom(100)` ist die **WebView-Normalgröße**, kein Extra-Zoom — und auch kein „aus“.
+- 0 % Schrift/Zoom gibt es nicht: die Seite wäre unsichtbar. Untergrenze war 50 %.
+- `setTextZoom` ändert **nur Schrift**. Buttons, Abstände, Chat-UI von arena.ai bleiben groß. Deshalb wirkte selbst 50 % noch „vvieel zu gezomt“.
+- Samsung-Systemschrift (`Configuration.fontScale` > 1) legt sich oft **obendrauf** — 100 % in der App wirkte dann schon wie 130–150 %.
+
+**BUG 5 — Zoom-Modell falsch (Schrift statt Seite).**
+*Was:* A−/A+ = `setTextZoom`, Min 50 %.
+*Folge:* 100 % = Browser-Default der WebView (oft schon groß); A− schrumpft nur Text, Layout bleibt riesig; kein Weg Richtung „alles kleiner wie rausgezoomt“.
+*Fix:*
+- A−/A+ setzen CSS `document.documentElement.style.zoom` (ganze Seite, wie Pinch).
+- `setTextZoom` bleibt fest 100, damit sich beide nicht stapeln.
+- Bereich **25–300 %**, Schritt 25. 25 % = ein Viertel der Seite. 0 % bewusst unmöglich.
+- 100 % = Normalmaß minus System-`fontScale` (große Systemschrift wird herausgerechnet).
+- Fehler-/Offlineseiten ohne CSS-Zoom (große Retry-Taste bleibt).
+- Toast/Menü heißen „Zoom“, nicht „Schriftgröße“.
+
+**Was nicht geändert wurde:** Pinch-Zoom der WebView bleibt an (`setSupportZoom`).
+
+- `versionCode` 6 / `versionName` 0.2.3.
+- `release/arena-0.2.3.apk` (SHA-256 folgt nach Build), gleiche Signatur wie 0.2.1–0.2.2-b.
 
 ---
 
@@ -217,7 +244,11 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `app/src/main/res/` | Toolbar-Layout (48-dp-Ziele), Menü (Desktop/Dunkelmodus/Sparmodus), Icons, Farben, DE+EN-Strings |
 | `app/src/main/assets/html/` | offline.html + error.html (Riesen-Tasten, Diagnosezeile) |
 | `build.sh`, `scripts/sign-apk.mjs` | kompletter APK-Build ohne Android Studio |
-| `release/arena-0.2.0.apk` | auslieferbare App |
+| `release/arena-0.2.0.apk` | 0.2.0 auf `main` |
+| `release/arena-0.2.1.apk` | Zoom-Regression (nicht nutzen) |
+| `release/arena-0.2.2.apk` | Schriftzoom-Fix |
+| `release/arena-0.2.2-b.apk` | + Versionsschild |
+| `release/arena-0.2.3.apk` | **aktuell** — Seiten-Zoom 25–300 % |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -259,5 +290,4 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 10. Epilog — was diese Session zeigt
 
-Ausgehend von einem Zweizeiler („App für max Android 7…") entstanden in **einer** Session: eine lauffähige, signierte Android-App (166 KB) für zwei reale Gerätegenerationen, eine vollständig dokumentierte Ersatz-Buildkette aus JRE, Fremd-Compiler, Forschungs-Archiv-Soot und Browser-Signierbibliothek, eine ehrliche Fehlerchronik inklusive der drei eigenen Bugs und ihrer Behebung – und ein fertiges Lastenheft (in Promptform) für den PC-Ableger. **Das ist Arena.**
-gs-Archiv-Soot und Browser-Signierbibliothek, eine ehrliche Fehlerchronik inklusive der drei eigenen Bugs und ihrer Behebung – und ein fertiges Lastenheft (in Promptform) für den PC-Ableger. **Das ist Arena.**
+Ausgehend von einem Zweizeiler („App für max Android 7…") entstanden in **einer** Session: eine lauffähige, signierte Android-App (166 KB) für zwei reale Gerätegenerationen, eine vollständig dokumentierte Ersatz-Buildkette aus JRE, Fremd-Compiler, Forschungs-Archiv-Soot und Browser-Signierbibliothek, eine ehrliche Fehlerchronik inklusive der eigenen Bugs und ihrer Behebung – und ein fertiges Lastenheft (in Promptform) für den PC-Ableger. **Das ist Arena.**
