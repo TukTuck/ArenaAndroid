@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.4** (`versionCode` 7) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.5** (`versionCode` 8) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -209,7 +209,29 @@ Root-Cause-Analyse im Code – **drei echte Bugs**, alle in der Hülle:
 - `shouldOverrideUrlLoading(WebResourceRequest)` für API 24+ (S8).
 
 - `versionCode` 7 / `versionName` 0.2.4.
-- `release/arena-0.2.4.apk` (SHA-256 folgt nach Build).
+- `release/arena-0.2.4.apk` (SHA-256 `774418474aa7d05411cf15a249c4c129ac28715904dd0182ccc11ec22071096d`).
+
+### 0.2.5 (2026-09-23) — Start-URL = Produkt `/code`, nicht Marketing `/`
+**Beleg:** Screenshots XCover 5 Chrome, 22:36–22:37, Adresszeile `arena.ai/code`.
+- Bild 1: Sidebar New Chat / Leaderboard / Search, Login `borny22@googlemail.com` — echte App.
+- Bild 2: „What would you like to do?“ — mobile Produkt-UI, ordentlich skaliert.
+
+**Zwei Gesichter derselben Domain (bestätigt):**
+| URL | Was man sieht |
+|---|---|
+| `https://arena.ai/` | Marketing-Hero „Experience the frontier“, 4:3-artig, Get started — das zeigte **unsere App** |
+| `https://arena.ai/code` | Produkt (Sidebar, Chat, Code) — das zeigt **Chrome auf dem X5** |
+
+Die App startete bisher auf `/`. Deshalb wirkte es wie „eine andere, kaputte Version“, war aber nur die **Landing statt der App**.
+
+**Fix:** `HOME_URL = https://arena.ai/code`. Bloße `/`-Links werden dorthin umgebogen. Andere Pfade (`/leaderboard`, Deep Links) unverändert.
+
+- `versionCode` 8 / `versionName` 0.2.5.
+- `release/arena-0.2.5.apk` (172579 B, SHA-256 `8a4a16e8064b0ead21e476d125ac424b0a2e144cdcaae5c77dfbb9aa550ad185`).
+
+**Signatur:** Diese Session hatte den Debug-Schlüssel von 0.2.1–0.2.4 **nicht** (`keystore/` ist gitignoriert, Sandbox war frisch). 0.2.5 ist mit einem **neuen** Schlüssel signiert. Android lässt das nicht als Update zu → **einmal 0.2.4 deinstallieren**, dann 0.2.5 sideloaden. Danach wieder Updates ohne Deinstall, solange derselbe Schlüssel da ist.
+
+Gestriger Emulator-Screen: in **dieser** Session nicht im Archiv. Der X5-Chrome-Stand reicht als Beweis.
 
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
@@ -273,7 +295,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.2.apk` | Schriftzoom-Fix |
 | `release/arena-0.2.2-b.apk` | + Versionsschild |
 | `release/arena-0.2.3.apk` | Seiten-Zoom 25–300 % |
-| `release/arena-0.2.4.apk` | **aktuell** — UA/Overview/kein Extra-JS, Tempo |
+| `release/arena-0.2.4.apk` | UA/Overview/kein Extra-JS |
+| `release/arena-0.2.5.apk` | **aktuell** — Start `https://arena.ai/code` |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -305,9 +328,9 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtest 0.2.4:** Chat öffnen, Zeit stoppen. Schild `0.2.4`. Bei ewigem Laden: Android-System-WebView im Play Store aktualisieren.
+1. **Feldtest 0.2.5:** Schild `0.2.5`. Muss die **Produkt-UI** zeigen (Sidebar / „What would you like to do?“), nicht den Marketing-Hero. Chat-Öffnen-Zeit stoppen.
 2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
-3. Nächste App-Version laut Auftrag: **0.2.3** (Inhalt noch offen).
+3. Zoom bewusst nicht weiter anfassen.
 4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
 5. PC-Ableger **ArenaPC** (`PROMPT-PC.md`) — bewusst zurückgestellt, erst die Android-App.
 

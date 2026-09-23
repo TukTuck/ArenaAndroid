@@ -39,9 +39,11 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.4.apk`)
-   oder aus dem Chat-Anhang. Die Version steht dauerhaft als Mini-Schild
-   in der Werkzeugleiste.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.5.apk`)
+   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.5` zeigen.
+   Startet auf **https://arena.ai/code** (Produkt), nicht auf `/`.
+   **0.2.5 hat einen neuen Signierschlüssel** (alter Key war nicht in Git) —
+   vorher die alte Arena-App **deinstallieren**, sonst lehnt Android das Update ab.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“
    für den Browser/die Dateiverwaltung erlauben.
 3. Fertig. Wer möchte, kann beim ersten Start den Launcher-Dialog nutzen, um

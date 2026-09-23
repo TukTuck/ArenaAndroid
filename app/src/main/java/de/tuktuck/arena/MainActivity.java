@@ -45,7 +45,8 @@ import java.util.regex.Pattern;
  */
 public class MainActivity extends Activity {
 
-    public static final String HOME_URL = "https://arena.ai/";
+    /** Produkt-UI, nicht die Marketing-Landing unter /. Beleg: Chrome XCover 5, 2026-09-23. */
+    public static final String HOME_URL = "https://arena.ai/code";
 
     private static final String PREFS = "arena";
     private static final String JS_BRIDGE = "ArenaApp";
@@ -180,7 +181,7 @@ public class MainActivity extends Activity {
             if (getIntent() != null && getIntent().getData() != null) {
                 url = getIntent().getDataString();
             }
-            loadMain(url != null ? url : HOME_URL);
+            loadMain(normalizeStartUrl(url));
         }
 
         if (getIntent() != null && getIntent().getBooleanExtra("crashed", false)) {
@@ -323,6 +324,24 @@ public class MainActivity extends Activity {
         } else {
             web.reload();
         }
+    }
+
+    /**
+     * Bare / ist die Marketing-Schale („Experience the frontier“).
+     * Das Produkt (Sidebar, New Chat, Code) liegt unter /code.
+     */
+    static String normalizeStartUrl(String url) {
+        if (url == null || url.length() == 0) {
+            return HOME_URL;
+        }
+        String t = url.trim();
+        if ("https://arena.ai".equals(t) || "https://arena.ai/".equals(t)
+                || "https://www.arena.ai".equals(t) || "https://www.arena.ai/".equals(t)
+                || "http://arena.ai".equals(t) || "http://arena.ai/".equals(t)
+                || "http://www.arena.ai".equals(t) || "http://www.arena.ai/".equals(t)) {
+            return HOME_URL;
+        }
+        return t;
     }
 
     private static boolean isLocalPage(String url) {
@@ -914,7 +933,7 @@ public class MainActivity extends Activity {
         if (intent != null && intent.getData() != null) {
             String u = intent.getDataString();
             if (u != null && (u.startsWith("http://") || u.startsWith("https://"))) {
-                loadMain(u);
+                loadMain(normalizeStartUrl(u));
             }
         }
     }
