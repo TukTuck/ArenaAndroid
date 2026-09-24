@@ -13,8 +13,8 @@ robusten eigenen Rahmen:
 * **Stabil:** Rendert die Seite neu, wenn der Web-Inhalt abbricht – inklusive
   automatischer Wiederherstellung nach einem App-Absturz. Klare Offline- und
   Fehlerseiten mit großer „Erneut versuchen“-Taste statt weißem Bildschirm.
-* **Zugänglich:** Große Schaltflächen (min. 48 dp), Schriftgröße der Webseite per
-  Knopfdruck von 50 % bis 300 % (bleibt gespeichert), TalkBack-Beschriftungen,
+* **Zugänglich:** Schwarze Leiste (32 dp), **Seiten-Zoom** A−/A+ von
+  25 % bis 300 % (100 % = Normalmaß, bleibt gespeichert), TalkBack-Beschriftungen,
   dunkler Modus, Desktop-Umschalter.
 * **Praktisch:** Login bleibt erhalten, Datei-Upload funktioniert, Downloads
   laufen über den Download-Manager, Links teilen, im Browser öffnen, Zurück-Taste
@@ -39,8 +39,13 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: entweder aus dem GitHub-Release **v0.1.0**, direkt aus diesem
-   Repo (`release/arena-0.1.0.apk`) oder aus dem Chat-Anhang.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.9.apk`)
+   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.9` zeigen.
+   Leiste schwarz, 32 dp.
+   **0.2.7 und älter:** auf Android 14 (XCover 5) „nicht kompatibel“, weil
+   `uses-sdk` im APK fehlte. 0.2.8 hat minSdk 19 / targetSdk 28.
+   Startet auf **https://arena.ai/code**. Zoom-Leiste Standard **aus** (Aa blass) —
+   Anzeige wie Chrome, ohne Größen-Vorgabe. Aa schaltet A−/A+ ein.
 2. Auf dem Gerät öffnen – beim ersten Mal „Installation aus unbekannten Quellen“
    für den Browser/die Dateiverwaltung erlauben.
 3. Fertig. Wer möchte, kann beim ersten Start den Launcher-Dialog nutzen, um
@@ -97,6 +102,7 @@ app/src/main/
 └── assets/html/                 # Offline- & Fehlerseite (mit „Erneut versuchen“)
 scripts/sign-apk.mjs             # Signierung (v1+v2+v3) via apk_sign_ts
 build.sh                         # APK-Build ohne Android Studio
+release/arena-<version>.apk      # fertige, signierte APK zum Sideloaden
 ```
 
 ## Hinweise

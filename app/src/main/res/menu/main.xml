@@ -4,6 +4,9 @@
         android:id="@+id/menu_reload"
         android:title="@string/menu_reload" />
     <item
+        android:id="@+id/menu_login"
+        android:title="@string/menu_login" />
+    <item
         android:id="@+id/menu_browser"
         android:title="@string/menu_browser" />
     <item

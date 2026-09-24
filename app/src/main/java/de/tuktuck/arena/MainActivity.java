@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.graphics.PorterDuff;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -36,20 +37,26 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Arena – schlanker, stabiler WebView-Client für arena.ai.
  * Optimiert für Geräte bis Android 7, läuft ab Android 4.4.
  */
 public class MainActivity extends Activity {
 
-    public static final String HOME_URL = "https://arena.ai/";
+    /** Produkt-UI, nicht die Marketing-Landing unter /. Beleg: Chrome XCover 5, 2026-09-23. */
+    public static final String HOME_URL = "https://arena.ai/code";
 
     private static final String PREFS = "arena";
     private static final String JS_BRIDGE = "ArenaApp";
     private static final String LOCAL_PREFIX = "file:///android_asset/";
     private static final int REQ_FILE = 2001;
-    private static final int ZOOM_MIN = 50;
+    /** Seiten-Zoom (CSS zoom), nicht Schriftzoom. 100 = WebView-Normalmaß, nicht „kein Zoom“. 0 % gäbe es nicht – die Seite wäre unsichtbar. */
+    private static final int ZOOM_MIN = 25;
     private static final int ZOOM_MAX = 300;
+    private static final int ZOOM_STEP = 25;
     private static final long ERROR_DEDUP_MS = 2500;
 
     /** Dunkler Modus für die Webseite (invertierter Filter, bewusst einfach gehalten). */
@@ -62,9 +69,24 @@ public class MainActivity extends Activity {
                     + "html img,html video,html canvas,html embed,html iframe,html object{filter:invert(1) hue-rotate(180deg);}';"
                     + "(document.head||document.documentElement).appendChild(s);}catch(e){}})();";
 
-    /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). */
+    static final String JS_CLEAR_ZOOM =
+            "(function(){try{document.documentElement.style.zoom='';}catch(e){}})();";
+
+    /** Klickt den Login-Knopf der Seite (liegt oft unterhalb der sichtbaren Sidebar). */
+    static final String JS_CLICK_LOGIN =
+            "(function(){try{"
+                    + "var nodes=document.querySelectorAll('a,button,[role=button]');"
+                    + "for(var i=0;i<nodes.length;i++){"
+                    + "var t=(nodes[i].innerText||nodes[i].textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();"
+                    + "if(t==='login'||t==='log in'||t==='sign in'||t==='anmelden'){"
+                    + "nodes[i].click();return 'ok';}}"
+                    + "return 'none';}catch(e){return 'err';}})();";
+
+    /** target=\"_blank\"-Links im selben Fenster öffnen (z. B. Login-Popups). Einmal pro Dokument. */
     static final String JS_KEEP_BLANK =
             "(function(){try{"
+                    + "if(window.__arenaKeepBlank){return;}"
+                    + "window.__arenaKeepBlank=true;"
                     + "document.addEventListener('click',function(e){"
                     + "var t=e.target;while(t&&t.tagName!=='A'){t=t.parentNode;if(!t||t===document){t=null;break;}}"
                     + "if(t&&t.getAttribute('target')==='_blank'){t.setAttribute('target','_self');}"
@@ -75,9 +97,11 @@ public class MainActivity extends Activity {
     private ImageView btnBack;
     private ImageView btnForward;
     private ImageView btnReload;
+    private TextView btnZoomToggle;
     private TextView btnZoomOut;
     private TextView btnZoomIn;
     private TextView btnMenu;
+    private TextView lblVersion;
     private View toolbar;
     private SharedPreferences prefs;
 
@@ -93,12 +117,22 @@ public class MainActivity extends Activity {
     private String lastErrorUrl;
     private long lastErrorAt;
     private BroadcastReceiver netReceiver;
+    /** Unveränderte WebView-UA, merken wir uns zum Chrome-ähnlich-Machen. */
+    private String stockUserAgent;
+    /** true, sobald der Nutzer den Zoom vom Default weggedreht hat – dann CSS-zoom setzen/löschen. */
+    private boolean zoomTouched;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         installCrashRecovery();
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        // 0.2.7: Zoom-Leiste Standard AUS, kein gespeicherter CSS-Zoom von 0.2.5.
+        if (!prefs.getBoolean("zoom_bar_default_027", false)) {
+            prefs.edit().putBoolean("zoom_bar", false).putInt("zoom", 100)
+                    .putBoolean("zoom_bar_default_027", true).commit();
+        }
+        zoomTouched = false;
         setContentView(R.layout.activity_main);
 
         toolbar = findViewById(R.id.toolbar);
@@ -106,9 +140,14 @@ public class MainActivity extends Activity {
         btnBack = (ImageView) findViewById(R.id.btn_back);
         btnForward = (ImageView) findViewById(R.id.btn_forward);
         btnReload = (ImageView) findViewById(R.id.btn_reload);
+        btnZoomToggle = (TextView) findViewById(R.id.btn_zoom_toggle);
         btnZoomOut = (TextView) findViewById(R.id.btn_zoom_out);
         btnZoomIn = (TextView) findViewById(R.id.btn_zoom_in);
         btnMenu = (TextView) findViewById(R.id.btn_menu);
+        lblVersion = (TextView) findViewById(R.id.lbl_version);
+        bindVersionBadge();
+        applyZoomBarUi();
+        tintToolbarIcons();
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,16 +171,22 @@ public class MainActivity extends Activity {
                 reloadCurrent();
             }
         });
+        btnZoomToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleZoomBar();
+            }
+        });
         btnZoomOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                changeZoom(-25);
+                changeZoom(-ZOOM_STEP);
             }
         });
         btnZoomIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                changeZoom(25);
+                changeZoom(ZOOM_STEP);
             }
         });
         btnMenu.setOnClickListener(new View.OnClickListener() {
@@ -152,8 +197,6 @@ public class MainActivity extends Activity {
         });
 
         setupWebView();
-        web.getSettings().setTextZoom(prefs.getInt("zoom", 100));
-        applyUserAgent();
         applyLite();
 
         boolean restored = false;
@@ -168,7 +211,7 @@ public class MainActivity extends Activity {
             if (getIntent() != null && getIntent().getData() != null) {
                 url = getIntent().getDataString();
             }
-            loadMain(url != null ? url : HOME_URL);
+            loadMain(normalizeStartUrl(url));
         }
 
         if (getIntent() != null && getIntent().getBooleanExtra("crashed", false)) {
@@ -213,17 +256,31 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setLoadsImagesAutomatically(true);
+        // Wie Chrome: Viewport-Meta der Seite gilt. Kein Overview-Zwangs-Fit,
+        // keine TextZoom-Vorgabe, kein injiziertes width=device-width.
         s.setUseWideViewPort(true);
-        s.setLoadWithOverviewMode(true);
+        s.setLoadWithOverviewMode(false);
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
+        s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setSaveFormData(false);
         s.setGeolocationEnabled(false);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(true);
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
+        try {
+            s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        } catch (Throwable ignored) {
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            try {
+                s.setOffscreenPreRaster(true);
+            } catch (Throwable ignored) {
+            }
+        }
         if (Build.VERSION.SDK_INT >= 16) {
             s.setAllowFileAccessFromFileURLs(false);
             s.setAllowUniversalAccessFromFileURLs(false);
@@ -233,6 +290,9 @@ public class MainActivity extends Activity {
             CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         }
         CookieManager.getInstance().setAcceptCookie(true);
+        stockUserAgent = s.getUserAgentString();
+        applyUserAgent();
+        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
         web.setWebViewClient(new ArenaWebViewClient(this));
         web.setWebChromeClient(new ArenaChromeClient(this));
@@ -292,6 +352,24 @@ public class MainActivity extends Activity {
         } else {
             web.reload();
         }
+    }
+
+    /**
+     * Bare / ist die Marketing-Schale („Experience the frontier“).
+     * Das Produkt (Sidebar, New Chat, Code) liegt unter /code.
+     */
+    static String normalizeStartUrl(String url) {
+        if (url == null || url.length() == 0) {
+            return HOME_URL;
+        }
+        String t = url.trim();
+        if ("https://arena.ai".equals(t) || "https://arena.ai/".equals(t)
+                || "https://www.arena.ai".equals(t) || "https://www.arena.ai/".equals(t)
+                || "http://arena.ai".equals(t) || "http://arena.ai/".equals(t)
+                || "http://www.arena.ai".equals(t) || "http://www.arena.ai/".equals(t)) {
+            return HOME_URL;
+        }
+        return t;
     }
 
     private static boolean isLocalPage(String url) {
@@ -401,6 +479,9 @@ public class MainActivity extends Activity {
                 web.evaluateJavascript(JS_DARK, null);
             }
             web.evaluateJavascript(JS_KEEP_BLANK, null);
+            if (isZoomBar()) {
+                applyPageZoom();
+            }
         }
     }
 
@@ -425,16 +506,105 @@ public class MainActivity extends Activity {
         btnForward.setAlpha(canFwd ? 1f : 0.3f);
     }
 
+    private int currentZoom() {
+        int z = prefs.getInt("zoom", 100);
+        if (z < ZOOM_MIN) {
+            z = ZOOM_MIN;
+        }
+        if (z > ZOOM_MAX) {
+            z = ZOOM_MAX;
+        }
+        return z;
+    }
+
+    private boolean isZoomBar() {
+        return prefs.getBoolean("zoom_bar", false);
+    }
+
+    private void applyZoomBarUi() {
+        boolean on = isZoomBar();
+        if (btnZoomToggle != null) {
+            btnZoomToggle.setAlpha(on ? 1f : 0.4f);
+            btnZoomToggle.setTextColor(getResources().getColor(on ? R.color.accent : R.color.icon));
+        }
+        int vis = on ? View.VISIBLE : View.GONE;
+        if (btnZoomOut != null) {
+            btnZoomOut.setVisibility(vis);
+        }
+        if (btnZoomIn != null) {
+            btnZoomIn.setVisibility(vis);
+        }
+    }
+
+    private void toggleZoomBar() {
+        boolean on = !isZoomBar();
+        prefs.edit().putBoolean("zoom_bar", on).commit();
+        applyZoomBarUi();
+        if (!on) {
+            zoomTouched = false;
+            if (web != null) {
+                web.evaluateJavascript(JS_CLEAR_ZOOM, null);
+            }
+        } else {
+            applyPageZoom();
+        }
+        Toast.makeText(this, on ? R.string.toast_zoom_bar_on : R.string.toast_zoom_bar_off,
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * CSS-Zoom nur bei eingeschalteter Zoom-Leiste und nach A−/A+.
+     * Leiste aus (Standard): nichts injizieren, Anzeige wie Chrome.
+     */
+    private void applyPageZoom() {
+        if (web == null || !isZoomBar()) {
+            return;
+        }
+        String url = web.getUrl();
+        if (isLocalPage(url)) {
+            return;
+        }
+        int user = currentZoom();
+        if (!zoomTouched && user == 100) {
+            return;
+        }
+        float fontScale = 1f;
+        try {
+            fontScale = getResources().getConfiguration().fontScale;
+        } catch (Throwable ignored) {
+        }
+        if (fontScale < 0.5f || fontScale > 3f) {
+            fontScale = 1f;
+        }
+        int effective = Math.round(user / fontScale);
+        if (effective < 10) {
+            effective = 10;
+        }
+        if (effective > ZOOM_MAX) {
+            effective = ZOOM_MAX;
+        }
+        String js;
+        if (effective == 100) {
+            js = "(function(){try{document.documentElement.style.zoom='';}catch(e){}})();";
+        } else {
+            js = "(function(){try{"
+                    + "document.documentElement.style.zoom=" + effective + "/100;"
+                    + "}catch(e){}})();";
+        }
+        web.evaluateJavascript(js, null);
+    }
+
     private void changeZoom(int delta) {
-        int cur = web.getSettings().getTextZoom() + delta;
+        zoomTouched = true;
+        int cur = currentZoom() + delta;
         if (cur < ZOOM_MIN) {
             cur = ZOOM_MIN;
         }
         if (cur > ZOOM_MAX) {
             cur = ZOOM_MAX;
         }
-        web.getSettings().setTextZoom(cur);
         prefs.edit().putInt("zoom", cur).commit();
+        applyPageZoom();
         Toast.makeText(this, getString(R.string.toast_zoom, cur), Toast.LENGTH_SHORT).show();
     }
 
@@ -452,6 +622,8 @@ public class MainActivity extends Activity {
                 int id = item.getItemId();
                 if (id == R.id.menu_reload) {
                     reloadCurrent();
+                } else if (id == R.id.menu_login) {
+                    clickSiteLogin();
                 } else if (id == R.id.menu_browser) {
                     String u = web.getUrl();
                     openExternally(u != null ? u : HOME_URL);
@@ -464,8 +636,12 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.menu_lite) {
                     toggleLite();
                 } else if (id == R.id.menu_zoom_reset) {
-                    web.getSettings().setTextZoom(100);
                     prefs.edit().putInt("zoom", 100).commit();
+                    zoomTouched = true;
+                    applyPageZoom();
+                    zoomTouched = false;
+                    Toast.makeText(MainActivity.this, getString(R.string.toast_zoom, 100),
+                            Toast.LENGTH_SHORT).show();
                 } else if (id == R.id.menu_clear) {
                     confirmClear();
                 } else if (id == R.id.menu_about) {
@@ -477,6 +653,27 @@ public class MainActivity extends Activity {
             }
         });
         popup.show();
+    }
+
+    /** Login der Website auslösen – der Knopf sitzt oft unter dem Promo-Block der Sidebar. */
+    private void clickSiteLogin() {
+        if (web == null) {
+            return;
+        }
+        String url = web.getUrl();
+        if (isLocalPage(url)) {
+            Toast.makeText(this, R.string.toast_login_none, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        web.evaluateJavascript(JS_CLICK_LOGIN, new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String value) {
+                if (value == null || value.indexOf("ok") < 0) {
+                    Toast.makeText(MainActivity.this, R.string.toast_login_none,
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void toggleDesktop() {
@@ -524,13 +721,32 @@ public class MainActivity extends Activity {
         web.getSettings().setLoadsImagesAutomatically(!lite);
     }
 
+    /**
+     * Chrome-ähnliche UA: `; wv` und `Version/4.0` entfernen.
+     * Viele SPAs (inkl. arena.ai) erkennen WebView und schalten auf langsamere
+     * oder kaputte Pfade. Desktop: echte Chrome-Version der WebView, nicht Chrome/60.
+     */
     private void applyUserAgent() {
+        String stock = stockUserAgent;
+        if (stock == null || stock.length() == 0) {
+            stock = web.getSettings().getUserAgentString();
+            stockUserAgent = stock;
+        }
+        if (stock == null) {
+            stock = "";
+        }
         if (isDesktop()) {
+            String ver = "120.0.0.0";
+            Matcher m = Pattern.compile("Chrome/([0-9.]+)").matcher(stock);
+            if (m.find()) {
+                ver = m.group(1);
+            }
             web.getSettings().setUserAgentString(
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                            + "(KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/"
+                            + ver + " Safari/537.36");
         } else {
-            web.getSettings().setUserAgentString(null);
+            String ua = stock.replace("; wv", "").replace(" Version/4.0", "");
+            web.getSettings().setUserAgentString(ua);
         }
     }
 
@@ -579,25 +795,55 @@ public class MainActivity extends Activity {
                 cm.removeAllCookie();
                 CookieSyncManager.getInstance().sync();
             }
-            prefs.edit().remove("zoom").remove("dark").remove("desktop").remove("lite").commit();
-            web.getSettings().setTextZoom(100);
+            prefs.edit().remove("zoom").remove("zoom_bar").remove("dark").remove("desktop")
+                    .remove("lite").commit();
+            zoomTouched = false;
+            applyZoomBarUi();
             applyUserAgent();
             applyLite();
+            web.evaluateJavascript(JS_CLEAR_ZOOM, null);
             loadMain(HOME_URL);
         } catch (Throwable ignored) {
         }
     }
 
-    private void showAbout() {
-        String version = "?";
+    /** Installierte versionName aus dem APK-Manifest – nie hardcodiert. */
+    private String installedVersionName() {
         try {
             PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
-            version = pi.versionName;
+            if (pi != null && pi.versionName != null && pi.versionName.length() > 0) {
+                return pi.versionName;
+            }
         } catch (Throwable ignored) {
         }
+        return "?";
+    }
+
+    private void bindVersionBadge() {
+        if (lblVersion == null) {
+            return;
+        }
+        lblVersion.setText(installedVersionName());
+    }
+
+    /** Pfeil-PNGs sind dunkel – auf schwarzer Leiste weiß einfärben (API 19: ColorFilter). */
+    private void tintToolbarIcons() {
+        int c = getResources().getColor(R.color.icon);
+        if (btnBack != null) {
+            btnBack.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
+        if (btnForward != null) {
+            btnForward.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
+        if (btnReload != null) {
+            btnReload.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
+    }
+
+    private void showAbout() {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.app_name)
-                .setMessage(getString(R.string.about_text, version))
+                .setMessage(getString(R.string.about_text, installedVersionName()))
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
@@ -788,7 +1034,7 @@ public class MainActivity extends Activity {
         if (intent != null && intent.getData() != null) {
             String u = intent.getDataString();
             if (u != null && (u.startsWith("http://") || u.startsWith("https://"))) {
-                loadMain(u);
+                loadMain(normalizeStartUrl(u));
             }
         }
     }
@@ -827,6 +1073,10 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) {
             web.onResume();
+            try {
+                web.resumeTimers();
+            } catch (Throwable ignored) {
+            }
         }
         ensureNetReceiver();
         registerReceiver(netReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));

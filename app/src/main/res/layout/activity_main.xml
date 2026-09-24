@@ -5,44 +5,44 @@
     android:background="@color/window_bg"
     android:orientation="vertical">
 
-    <!-- Werkzeugleiste: große, gut erreichbare Schaltflächen (min. 48 dp) -->
+    <!-- 0.2.9: schwarz, ~halb so hoch wie 56 dp – mehr Fläche für die Seite. -->
     <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="32dp"
         android:background="@color/toolbar_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingEnd="4dp"
-        android:paddingStart="4dp">
+        android:paddingEnd="2dp"
+        android:paddingStart="2dp">
 
         <ImageView
             android:id="@+id/btn_back"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_back"
-            android:padding="13dp"
+            android:padding="7dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_back" />
 
         <ImageView
             android:id="@+id/btn_forward"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_forward"
-            android:padding="13dp"
+            android:padding="7dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_forward" />
 
         <ImageView
             android:id="@+id/btn_reload"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_reload"
-            android:padding="12dp"
+            android:padding="7dp"
             android:scaleType="centerInside"
             android:src="@drawable/ic_reload" />
 
@@ -52,39 +52,69 @@
             android:layout_weight="1" />
 
         <TextView
+            android:id="@+id/lbl_version"
+            android:layout_width="wrap_content"
+            android:layout_height="16dp"
+            android:layout_marginEnd="2dp"
+            android:background="@drawable/version_badge_bg"
+            android:contentDescription="@string/cd_version"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:text="—"
+            android:textColor="@color/version_badge_text"
+            android:textSize="8sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_zoom_toggle"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/btn_bg"
+            android:contentDescription="@string/cd_zoom_toggle"
+            android:gravity="center"
+            android:text="Aa"
+            android:textColor="@color/icon"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/btn_zoom_out"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_zoom_out"
             android:gravity="center"
             android:text="A−"
             android:textColor="@color/icon"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_zoom_in"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_zoom_in"
             android:gravity="center"
             android:text="A+"
             android:textColor="@color/icon"
-            android:textSize="21sp"
-            android:textStyle="bold" />
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_menu"
-            android:layout_width="52dp"
-            android:layout_height="48dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:background="@drawable/btn_bg"
             android:contentDescription="@string/cd_menu"
             android:gravity="center"
             android:text="⋮"
             android:textColor="@color/icon"
-            android:textSize="22sp" />
+            android:textSize="16sp" />
     </LinearLayout>
 
     <View
@@ -96,7 +126,7 @@
         android:id="@+id/progress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
+        android:layout_height="2dp"
         android:max="100"
         android:progressDrawable="@drawable/progress_horizontal" />
 
