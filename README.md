@@ -13,7 +13,7 @@ robusten eigenen Rahmen:
 * **Stabil:** Rendert die Seite neu, wenn der Web-Inhalt abbricht – inklusive
   automatischer Wiederherstellung nach einem App-Absturz. Klare Offline- und
   Fehlerseiten mit großer „Erneut versuchen“-Taste statt weißem Bildschirm.
-* **Zugänglich:** Große Schaltflächen (min. 48 dp), **Seiten-Zoom** A−/A+ von
+* **Zugänglich:** Schwarze Leiste (32 dp), **Seiten-Zoom** A−/A+ von
   25 % bis 300 % (100 % = Normalmaß, bleibt gespeichert), TalkBack-Beschriftungen,
   dunkler Modus, Desktop-Umschalter.
 * **Praktisch:** Login bleibt erhalten, Datei-Upload funktioniert, Downloads
@@ -39,8 +39,9 @@ robusten eigenen Rahmen:
 
 ## Installation
 
-1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.8.apk`)
-   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.8` zeigen.
+1. Die APK laden: direkt aus diesem Repo (`release/arena-0.2.9.apk`)
+   oder aus dem Chat-Anhang. Schild in der Leiste muss `0.2.9` zeigen.
+   Leiste schwarz, 32 dp.
    **0.2.7 und älter:** auf Android 14 (XCover 5) „nicht kompatibel“, weil
    `uses-sdk` im APK fehlte. 0.2.8 hat minSdk 19 / targetSdk 28.
    Startet auf **https://arena.ai/code**. Zoom-Leiste Standard **aus** (Aa blass) —

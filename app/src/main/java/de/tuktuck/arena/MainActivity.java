@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.graphics.PorterDuff;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -146,6 +147,7 @@ public class MainActivity extends Activity {
         lblVersion = (TextView) findViewById(R.id.lbl_version);
         bindVersionBadge();
         applyZoomBarUi();
+        tintToolbarIcons();
 
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -822,6 +824,20 @@ public class MainActivity extends Activity {
             return;
         }
         lblVersion.setText(installedVersionName());
+    }
+
+    /** Pfeil-PNGs sind dunkel – auf schwarzer Leiste weiß einfärben (API 19: ColorFilter). */
+    private void tintToolbarIcons() {
+        int c = getResources().getColor(R.color.icon);
+        if (btnBack != null) {
+            btnBack.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
+        if (btnForward != null) {
+            btnForward.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
+        if (btnReload != null) {
+            btnReload.setColorFilter(c, PorterDuff.Mode.SRC_IN);
+        }
     }
 
     private void showAbout() {

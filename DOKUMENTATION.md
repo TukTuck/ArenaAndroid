@@ -1,7 +1,7 @@
 # DOKUMENTATION — Arena für Android
 
 **Projekt:** Arena für Android · stabiler, zugänglicher WebView-Client für arena.ai
-**Aktueller Stand:** **0.2.8** (`versionCode` 11) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
+**Aktueller Stand:** **0.2.9** (`versionCode` 12) auf Branch `arena/01a0cd80-arenaandroid` (PR #2 **offen, nicht mergen**)
 **main:** 0.2.0 (PR #1, Commit `fefbe97`) — bewusst nicht nachgezogen, weil Merge die Coding-Session beendet
 **Erstellt:** 2026-09-21 · weitergeführt 2026-09-23
 **Autor der Umsetzung:** Arena.ai Agent Mode (auf Basis des Auftragstextes des Projektinhabers)
@@ -283,6 +283,17 @@ P4 in der Doku („targetSdk 28, weil Android 14 &lt; 23 blockt“) war die rich
 - `versionCode` 11 / `versionName` 0.2.8.
 - `release/arena-0.2.8.apk` (169469 B, SHA-256 `5f63f5f384a877af8cb92a24ae36fcb0d660490b3646f531b85ce81a56596edc`). `aapt2 dump badging`: `sdkVersion:'19'` `targetSdkVersion:'28'`.
 
+### 0.2.9 (2026-09-24) — Leiste schwarz, halb so hoch
+**Auftrag:** App geht auf dem X5, Performance unverändert. Leiste schwarz und dünner.
+
+**Was:** Toolbar 56 dp → **32 dp**, Farben `#000` / helle Icons (PNG per ColorFilter, API 19). Status-/Nav-Leiste schwarz (API 21+). Progress 2 dp. Mehr Fläche für die Seite. Kein Zoom-/WebView-Umbau.
+
+- `versionCode` 12 / `versionName` 0.2.9.
+- `release/arena-0.2.9.apk` (170149 B, SHA-256 `a1f4662922e5a3ab345aea5f843462996123580e4d24906068db0bc5b99d5ff2`). `aapt2 dump badging`: `sdkVersion:'19'` `targetSdkVersion:'28'`.
+- Signatur: Sandbox-Keystore neu erzeugt. Überschreiben von 0.2.8 per Drag-and-Drop kann am Schlüssel scheitern – dann 0.2.8 deinstallieren und 0.2.9 neu.
+
+**Nächster Block (nicht in dieser APK):** Performance. Hülle ändert die JS-Engine nicht. Nächster sinnvoller Schritt: WebView-Einstellungen an **WebView Browser Tester** angleichen (der auf dem Emulator die Seite korrekt und flüssig zeigte) und Chat-Öffnen messen — nicht weiter an der Leiste drehen.
+
 **Ehrliche Grenze:** Wenn Android-System-WebView auf dem S8 uralt ist, bleibt JS langsam – dann WebView im Play Store aktualisieren. Der Wrapper kann keine neue JS-Engine einbauen.
 
 ---
@@ -349,7 +360,8 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 | `release/arena-0.2.5.apk` | Start `/code`, Desktop-Crop (nicht nutzen) |
 | `release/arena-0.2.6.apk` | Viewport-Inject (nicht Default) |
 | `release/arena-0.2.7.apk` | Zoom-Leiste aus; **kein uses-sdk** (X5 blockt) |
-| `release/arena-0.2.8.apk` | **aktuell** — minSdk 19 / targetSdk 28 im APK |
+| `release/arena-0.2.8.apk` | uses-sdk 19/28 |
+| `release/arena-0.2.9.apk` | **aktuell** — Leiste schwarz 32 dp |
 | `keystore/` (lokal, gitignoriert) | Signierschlüssel – für Updates zwingend aufbewahren |
 | `PROMPT-PC.md` | Wahnsinnsprompt für den PC-Ableger (ArenaPC) |
 | `DOKUMENTATION.md` | dieses Dokument |
@@ -381,7 +393,7 @@ Netztest (curl): erreichbar **ausschließlich** `github.com`, `api.github.com`, 
 
 ## 9. Offene Punkte & Ausblick
 
-1. **Feldtest 0.2.8 auf XCover 5:** Sideload muss durchgehen. Schild `0.2.8`. Dann Layout vs Chrome (0.2.7-Emulator: App Crop, Chrome/WebView-Tester OK).
+1. **Feldtest 0.2.9:** Schild `0.2.9`, Leiste schwarz und dünn. Danach Performance (Tester-Settings, Chat-Öffnen messen).
 2. ~~Doku nicht auf GitHub~~ — erledigt auf Session-Branch (PR #2, **nicht mergen**).
 3. Zoom nur noch hinter dem Aa-Schalter.
 4. Mögliche Ausbaustufen: Lesezeichen, „letzte Position merken", Auto-Reload bei Renderer-Freeze, ZIP-Alignment, geprüfter Auto-Updater.
